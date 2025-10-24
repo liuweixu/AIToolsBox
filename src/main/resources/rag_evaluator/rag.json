@@ -1,0 +1,109 @@
+[
+  {
+    "question": "React 中的虚拟 DOM 是什么？",
+    "docs": [
+      "React 使用虚拟 DOM 来提高 UI 更新效率；虚拟 DOM 是对真实 DOM 的轻量级抽象表示；在状态更新时，React 会先在虚拟 DOM 中进行计算，减少直接操作真实 DOM 的次数"
+    ],
+    "answer": "虚拟 DOM 是 React 对真实 DOM 的轻量级抽象表示，用于提高 UI 更新效率。"
+  },
+  {
+    "question": "React 的 state 和 props 有什么区别？",
+    "docs": [
+      "state 是组件自身管理的数据，组件内部可以修改；props 是组件外部传入的数据，只读不可修改；state 会触发组件重新渲染，props 改变也会触发渲染"
+    ],
+    "answer": "state 是组件内部可变的数据，props 是外部传入的只读数据，两者都会影响组件渲染。"
+  },
+  {
+    "question": "React 中 useEffect 的作用是什么？",
+    "docs": [
+      "useEffect 是 React Hook，用于在函数组件中处理副作用；可以在组件挂载、更新或卸载时执行特定逻辑；常用于数据请求、订阅或手动操作 DOM"
+    ],
+    "answer": "useEffect 用于在函数组件中处理副作用，例如数据请求、订阅或操作 DOM。"
+  },
+  {
+    "question": "什么是 React 组件的受控组件和非受控组件？",
+    "docs": [
+      "受控组件是指表单元素的值由 state 控制，组件通过 onChange 修改 state；非受控组件是表单元素的值由 DOM 自身管理，可以使用 ref 获取值"
+    ],
+    "answer": "受控组件的值由 state 控制，非受控组件的值由 DOM 自身管理。"
+  },
+  {
+    "question": "React Router 的主要功能是什么？",
+    "docs": [
+      "React Router 是 React 的路由库，用于在单页应用中管理页面导航；提供 BrowserRouter、Routes、Route 等组件；支持动态路由、嵌套路由和重定向"
+    ],
+    "answer": "React Router 用于在单页应用中管理页面导航，支持动态路由、嵌套路由和重定向。"
+  },
+  {
+    "question": "React 中的 key 属性有什么作用？",
+    "docs": [
+      "key 属性用于在渲染列表时标识每个元素的唯一性；React 通过 key 来高效识别哪些元素被添加、删除或更新；合理使用 key 可以提升列表渲染性能"
+    ],
+    "answer": "key 属性用于标识列表元素的唯一性，帮助 React 高效更新列表。"
+  },
+  {
+    "question": "React 中的函数组件和类组件有什么区别？",
+    "docs": [
+      "函数组件是使用函数定义的组件，支持 Hooks 来管理状态和生命周期；类组件使用 ES6 类定义，需要继承 React.Component；类组件使用 this.state 和生命周期方法管理状态，函数组件则通过 Hooks"
+    ],
+    "answer": "函数组件通过 Hooks 管理状态和生命周期，类组件使用 this.state 和生命周期方法，两者定义方式不同。"
+  },
+  {
+    "question": "React 中的 Context 用途是什么？",
+    "docs": [
+      "Context 提供一种在组件树中共享数据的方式，无需通过逐层传递 props；常用于主题、语言或用户信息等全局数据共享；使用 React.createContext 创建 context，再通过 Provider 提供数据"
+    ],
+    "answer": "Context 用于在组件树中共享全局数据，无需逐层传递 props。"
+  },
+  {
+    "question": "React 中 useMemo 的作用是什么？",
+    "docs": [
+      "useMemo 是 Hook，用于缓存计算结果，避免重复计算；在依赖未变化时返回缓存值，提高性能；常用于复杂计算或渲染大量子组件时优化性能"
+    ],
+    "answer": "useMemo 用于缓存计算结果，避免重复计算，从而提高性能。"
+  },
+  {
+    "question": "React 中 useCallback 的作用是什么？",
+    "docs": [
+      "useCallback 是 Hook，用于缓存函数实例，避免子组件重复渲染；依赖未变化时返回同一个函数引用；常与 React.memo 搭配使用优化性能"
+    ],
+    "answer": "useCallback 用于缓存函数实例，避免不必要的子组件重复渲染。"
+  },
+  {
+    "question": "React 中 React.memo 的作用是什么？",
+    "docs": [
+      "React.memo 是高阶组件，用于对函数组件进行性能优化；在 props 未改变时阻止组件重新渲染；常与 useCallback 或 useMemo 配合使用"
+    ],
+    "answer": "React.memo 用于优化函数组件性能，阻止在 props 未改变时的重复渲染。"
+  },
+  {
+    "question": "React 中事件处理与原生 DOM 有什么区别？",
+    "docs": [
+      "React 使用合成事件（SyntheticEvent）封装原生事件，具有跨浏览器兼容性；事件名称采用 camelCase 风格，如 onClick；React 不直接绑定事件到 DOM，而是通过事件委托机制"
+    ],
+    "answer": "React 的事件处理使用合成事件，具有跨浏览器兼容性，并通过事件委托机制管理事件。"
+  },
+  {
+    "question": "React 中的 Fragment 有什么用途？",
+    "docs": [
+      "Fragment 可以包裹多个子元素而不额外生成 DOM 节点；可用 <>...</> 或 <React.Fragment>...</React.Fragment>；常用于返回多个元素的组件渲染"
+    ],
+    "answer": "Fragment 用于包裹多个子元素而不增加额外的 DOM 节点。"
+  },
+  {
+    "question": "React 中 useRef 的作用是什么？",
+    "docs": [
+      "useRef 返回一个可变的 ref 对象，可以保存 DOM 节点或任意可变数据；ref 对象在组件生命周期内保持不变；常用于访问 DOM 元素或在渲染间保持数据"
+    ],
+    "answer": "useRef 用于访问 DOM 元素或保存组件渲染间可变数据。"
+  },
+  {
+    "question": "React 中的异步渲染（Concurrent Mode）是什么？",
+    "docs": [
+      "Concurrent Mode 是 React 的新特性，用于异步渲染组件；允许 React 中断渲染任务以响应用户交互，提高界面响应速度；需要使用 experimental 版本或相关 API 开启"
+    ],
+    "answer": "Concurrent Mode 用于异步渲染组件，提高界面响应速度。"
+  }
+]
+
+

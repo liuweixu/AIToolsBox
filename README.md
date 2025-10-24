@@ -26,7 +26,7 @@ EventSource是浏览器接受ServerSent Events的API，可以让服务器主动�
 5. 引入Redis-stack作为向量数据库。
 6. 引入RAG，解决模型的幻觉问题。并且引入RRF-Fusion算法，更好优化RAG性能。
 7. 引入搜狗MCP，实现工具的调用，能够查询最新消息，解决模型的实时性不够和幻觉问题。
-8. 在后端系统中，引入RAG评估，更好调优模型。
+8. 在后端系统中，引入RAG评估，更好调优模型。流程见下面的“注意”
 9. 前端界面实现RAG和MCP的开启与关闭功能。
 
 ### 使用方式：
@@ -58,6 +58,7 @@ npm run dev
 - 如果有参考文件用于RAG，可以直接放在src/main/resources/docstest中（如果没有文件夹名就自己创建一个）。
 - 在Spring AI上使用Redis-stack作为向量数据库时，database只能用0，用其他会出现不能正常读取的bug。
 - 在Redis存储会话记忆上，使用的是Spring AI Alibaba的，Spring AI并没有支持。
+- 在test中，可以运行Evaluator这一个测试类，里面写好RAG的简单评估流程，可以进一步拓展到更大规模数据集。
 
 ### 界面示意图（Chat）
 ![img.png](img.png)
@@ -70,3 +71,4 @@ npm run dev
 4. [阿里云百炼大模型](https://bailian.console.aliyun.com/?accounttraceid=494cccbc11014cf1a6f54cba1bc77e68dsju#/model-market/all)
 5. [魔塔社区](https://modelscope.cn/mcp)
 6. [ChatGPT](https://chatgpt.com/)
+7. [模型评估](https://mp.weixin.qq.com/s?__biz=Mzk0NzcxNjYwNQ==&mid=2247484548&idx=1&sn=b94c8f20cf4d4d97cfb083aa854d83fd&chksm=c373ec16f4046500944a687c7c5a7b7a2fed4b58891414af524c1ee97401ac9cab5babc6c0e7&cur_album_id=4193652872187478022&scene=189#wechat_redirect)
