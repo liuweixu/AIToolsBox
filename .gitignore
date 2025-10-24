@@ -1,0 +1,62 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### 教程文件禁止上传
+.gitignore
+.gitattributes
+src/main/java/org/example/chatreact/controller/Chapter02ChatController.java
+src/main/java/org/example/chatreact/controller/Chapter03ChatController.java
+src/main/java/org/example/chatreact/controller/Chapter04ChatController.java
+src/main/java/org/example/chatreact/controller/Chapter05ChatController.java
+src/main/java/org/example/chatreact/controller/Chapter06ChatController.java
+src/main/java/org/example/chatreact/controller/Chapter07ChatController.java
+src/main/java/org/example/chatreact/controller/Chapter08ChatController.java
+src/main/java/org/example/chatreact/controller/dto
+src/main/resources/prompt_learning
+src/main/resources/prompt_learning/*
+src/test/java/org/example/chatreact/leanring
+/src/main/java/org/example/chatreact/controller/AImiao/
+/src/main/java/org/example/chatreact/controller/AImiao/Chapter02ChatController.java
+/src/main/java/org/example/chatreact/controller/AImiao/Chapter03ChatController.java
+/src/main/java/org/example/chatreact/controller/AImiao/Chapter04ChatController.java
+/src/main/java/org/example/chatreact/controller/AImiao/Chapter05ChatController.java
+/src/main/java/org/example/chatreact/controller/AImiao/Chapter08ChatController.java
+/src/main/java/org/example/chatreact/controller/RAG/
+/src/test/java/org/example/chatreact/test/
+/src/main/resources/doctest/
+/src/main/java/org/example/chatreact/utilstest/
+/src/main/resources/mcp-servers-config.json
+/src/main/resources/application_dev.yml
+/frontend/node_modules/
+.DS_Store

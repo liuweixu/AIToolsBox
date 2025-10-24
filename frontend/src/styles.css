@@ -1,0 +1,18 @@
+.bubble {
+  max-width: 70%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin: 8px;
+}
+
+.bubble.user {
+  background: #e6f4ff;
+  margin-right: 8px;
+}
+
+.bubble.ai {
+  background: #f6ffed;
+  margin-left: 8px;
+}
+
+
