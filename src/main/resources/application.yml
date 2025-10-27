@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: ChatReact
+  ai:
+    dashscope:
+      api-key: sk-594fe081db954603b2b7bd9a29691003
+      chat:
+        options:
+          model: qwen-plus-2025-09-11
+        enabled: false
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: deepseek-r1:latest
