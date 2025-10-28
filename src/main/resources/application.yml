@@ -1,17 +1,53 @@
 spring:
   application:
     name: ChatReact
+  datasource:
+    url: jdbc:mysql://localhost:3306/chatmemory
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 12345678
+
   ai:
+    # 引入阿里千问
     dashscope:
-      api-key: sk-594fe081db954603b2b7bd9a29691003
+      api-key: sk-2bad25356fc546fa85f792652b34af8e
       chat:
         options:
           model: qwen-plus-2025-09-11
+          temperature: 0.7
+      embedding:
+        options:
+          model: text-embedding-v4
+    # 引入deepseek
+    deepseek:
+      api-key: sk-72b6f63b5099437d94ca8b5cd370b8c8
+      chat:
+        options:
+          model: deepseek-chat
+
+    # 引入智谱AI
+    zhipuai:
+      api-key: 0e3fa20e31f94e388a6ed827834038f5.fn86ydXOj9teSq20
+      chat:
+        options:
+          model: glm-4.5v
+
+    # 引入ollama
     ollama:
       base-url: http://localhost:11434
       chat:
         model: gemma3:270m
-        enabled: false
+
+
+
+
+  # Redis设置
+  data:
+    redis:
+      port: 6379
+      database: 0
+      username: root
+      password:
 
 logging:
   level:

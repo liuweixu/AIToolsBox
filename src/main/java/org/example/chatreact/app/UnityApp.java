@@ -1,11 +1,14 @@
 package org.example.chatreact.app;
 
+import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import lombok.extern.slf4j.Slf4j;
 import org.example.chatreact.advisor.MyLoggerAdvisor;
 import org.example.chatreact.chatmemory.FileBasedChatMemory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Component;
@@ -16,7 +19,6 @@ import java.util.List;
 @Slf4j
 public class UnityApp {
 
-    private static final String CHAT_MEMORY_CONVERSATION_ID = "conversationId";
     private final ChatClient chatClient;
 
     /**
@@ -45,26 +47,32 @@ public class UnityApp {
 
     /**
      * 构造对象
+     *
      * @param dashscopeChatModel
      */
     public UnityApp(ChatModel dashscopeChatModel) {
-//        // 基于内存的对话记忆
-//        ChatMemory chatMemory = new InMemoryChatMemory();
-        // 初始化基于文件的对话记忆
-        String fileDir = System.getProperty("user.dir") + "/chat-memory";
-        ChatMemory chatMemory = new FileBasedChatMemory(fileDir);
+        // 基于内存的对话记忆
+        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
+                .chatMemoryRepository(new InMemoryChatMemoryRepository())
+                .maxMessages(20)
+                .build();
+
         chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)
                 .defaultAdvisors(
-                        new MessageChatMemoryAdvisor(chatMemory),
+                        MessageChatMemoryAdvisor.builder(chatMemory).build(),
                         // 自定义日志Advisor
                         new MyLoggerAdvisor()
                 )
                 .build();
+        // 初始化基于文件的对话记忆
+//        String fileDir = System.getProperty("user.dir") + "/chat-memory";
+//        ChatMemory chatMemory = new FileBasedChatMemory(fileDir);
     }
 
     /**
      * 基础对话方法 可以实现多轮对话
+     *
      * @param message
      * @param chatId
      * @return
@@ -73,29 +81,34 @@ public class UnityApp {
         ChatResponse response = chatClient
                 .prompt()
                 .user(message)
-                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID, chatId)
-                        .param(CHAT_MEMORY_CONVERSATION_ID, 10))
+                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId)
+                        .param(ChatMemory.CONVERSATION_ID, 10))
                 .call()
                 .chatResponse();
-        String content = response.getResult().getOutput().getText();
+        String content = null;
+        if (response != null) {
+            content = response.getResult().getOutput().getText();
+        }
         log.info("Chat response: {}", content);
         return content;
     }
 
     /**
      * Unity开发学习报告类
+     *
      * @param title
      * @param suggestions
      */
-    public record UnityReport(String title, List<String> suggestions) {}
+    public record UnityReport(String title, List<String> suggestions) {
+    }
 
     public UnityReport doChatWithReport(String message, String chatId) {
         UnityReport unityReport = chatClient
                 .prompt()
                 .system(SYSTEM_PROMPT + "每次对话要生成学习报告结果，标题为{用户名}的学习报告，内容为建议列表")
                 .user(message)
-                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID, chatId)
-                        .param(CHAT_MEMORY_CONVERSATION_ID, 10))
+                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId)
+                        .param(ChatMemory.CONVERSATION_ID, 10))
                 .call()
                 .entity(UnityReport.class);
         log.info("Unity report: {}", unityReport);
