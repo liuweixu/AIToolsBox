@@ -33,3 +33,6 @@ build/
 .vscode/
 /src/main/resources/application_dev.yml
 /src/main/java/org/example/chatreact/test/
+/src/main/resources/prompt/
+/src/test/java/org/example/chatreact/UnityAppTest.java
+/ToDO.md

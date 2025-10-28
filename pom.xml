@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>org.example</groupId>
-    <artifactId>ChatReact</artifactId>
+    <artifactId>ChatUnity</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>ChatReact</name>
     <description>ChatReact</description>
@@ -58,7 +58,17 @@
             <version>1.0.0-M6</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-generator</artifactId>
+            <version>4.38.0</version>
+        </dependency>
 
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>5.6.2</version>
+        </dependency>
 
         <dependency>
             <groupId>org.projectlombok</groupId>

@@ -7,8 +7,12 @@ spring:
       chat:
         options:
           model: qwen-plus-2025-09-11
-        enabled: false
     ollama:
       base-url: http://localhost:11434
       chat:
-        model: deepseek-r1:latest
+        model: gemma3:270m
+        enabled: false
+
+logging:
+  level:
+    org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor: debug
