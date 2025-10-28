@@ -7,20 +7,20 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 @Service
-public class AIPlatformFactory {
+public class ChatModelFactory {
 
     private final Map<String, ChatModelStrategy> strategyMap = new HashMap<>();
 
-    public AIPlatformFactory(List<ChatModelStrategy> strategies) {
+    public ChatModelFactory(List<ChatModelStrategy> strategies) {
         for (ChatModelStrategy strategy : strategies) {
             strategyMap.put(strategy.getPlatformName(), strategy);
         }
     }
 
-    public ChatModel getChatModel(String aiPlatform) {
+    public ChatModel getChatModel(String modelName) {
         ChatModelStrategy strategy = strategyMap.getOrDefault(
-                aiPlatform,
-                strategyMap.get(AIPlatform.OLLAMA.name()) // 默认
+                modelName,
+                strategyMap.get(ChatModelEnum.OLLAMA.name()) // 默认
         );
         return strategy.createChatModel();
     }

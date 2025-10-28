@@ -1,6 +1,6 @@
 package org.example.chatreact.chatmodel;
 
-public enum AIPlatform {
+public enum ChatModelEnum {
 
     DASHSCOPE,
     DEEPSEEK,

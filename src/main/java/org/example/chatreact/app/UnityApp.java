@@ -1,12 +1,16 @@
 package org.example.chatreact.app;
 
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.chatreact.advisor.MyLoggerAdvisor;
 import org.example.chatreact.chatmemory.FileBasedChatMemory;
+import org.example.chatreact.chatmodel.ChatModelFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
@@ -14,12 +18,20 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @Slf4j
 public class UnityApp {
 
-    private final ChatClient chatClient;
+    private final ChatModelFactory chatModelFactory;
+
+    // 缓存每个平台的 ChatClient
+    private final Map<String, ChatClient> chatClientCache = new ConcurrentHashMap<>();
+
+    @Resource
+    private ChatMemoryRepository chatMemoryRepository;
 
     /**
      * 系统提示词
@@ -45,19 +57,37 @@ public class UnityApp {
             始终以一位亲切、专业的 Unity 导师身份进行交流，帮助用户真正掌握 Unity 与 C# 游戏开发技能。
             """;
 
+
     /**
      * 构造对象
+     * 现在改为引入ChatModelFactoryu
      *
-     * @param dashscopeChatModel
+     * @param chatModelFactory
      */
-    public UnityApp(ChatModel dashscopeChatModel) {
-        // 基于内存的对话记忆
+    public UnityApp(ChatModelFactory chatModelFactory) {
+
+        this.chatModelFactory = chatModelFactory;
+        // 初始化基于文件的对话记忆
+//        String fileDir = System.getProperty("user.dir") + "/chat-memory";
+//        ChatMemory chatMemory = new FileBasedChatMemory(fileDir);
+    }
+
+    /**
+     * 会话记忆引入Redis
+     *
+     * @param chatModelName
+     * @return
+     */
+    private ChatClient createChatClient(String chatModelName) {
+        ChatModel chatModel = this.chatModelFactory.getChatModel(chatModelName);
+        log.info("ChatModel for AIPlatform: {}", chatModel);
+        // 基于Redis的对话记忆
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
-                .chatMemoryRepository(new InMemoryChatMemoryRepository())
+                .chatMemoryRepository(chatMemoryRepository)
                 .maxMessages(20)
                 .build();
 
-        chatClient = ChatClient.builder(dashscopeChatModel)
+        return ChatClient.builder(chatModel)
                 .defaultSystem(SYSTEM_PROMPT)
                 .defaultAdvisors(
                         MessageChatMemoryAdvisor.builder(chatMemory).build(),
@@ -65,10 +95,17 @@ public class UnityApp {
                         new MyLoggerAdvisor()
                 )
                 .build();
-        // 初始化基于文件的对话记忆
-//        String fileDir = System.getProperty("user.dir") + "/chat-memory";
-//        ChatMemory chatMemory = new FileBasedChatMemory(fileDir);
     }
+
+
+    @PostConstruct
+    public void initAllChatClients() {
+        for (String modelName : List.of("DASHSCOPE", "DEEPSEEK", "OLLAMA", "ZHIPUAI")) {
+            chatClientCache.computeIfAbsent(modelName, this::createChatClient);
+        }
+        log.info("所有 ChatClient 初始化完成: {}", chatClientCache.keySet());
+    }
+
 
     /**
      * 基础对话方法 可以实现多轮对话
@@ -77,7 +114,9 @@ public class UnityApp {
      * @param chatId
      * @return
      */
-    public String doChat(String message, String chatId) {
+    public String doChat(String message, String chatId, String modelName) {
+        ChatClient chatClient = chatClientCache.get(modelName);
+        log.info("选择的模型：{}", modelName);
         ChatResponse response = chatClient
                 .prompt()
                 .user(message)
@@ -102,7 +141,8 @@ public class UnityApp {
     public record UnityReport(String title, List<String> suggestions) {
     }
 
-    public UnityReport doChatWithReport(String message, String chatId) {
+    public UnityReport doChatWithReport(String message, String chatId, String modelName) {
+        ChatClient chatClient = chatClientCache.get(modelName);
         UnityReport unityReport = chatClient
                 .prompt()
                 .system(SYSTEM_PROMPT + "每次对话要生成学习报告结果，标题为{用户名}的学习报告，内容为建议列表")

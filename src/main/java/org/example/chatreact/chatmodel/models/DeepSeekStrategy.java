@@ -1,7 +1,7 @@
 package org.example.chatreact.chatmodel.models;
 
 import jakarta.annotation.Resource;
-import org.example.chatreact.chatmodel.AIPlatform;
+import org.example.chatreact.chatmodel.ChatModelEnum;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.deepseek.DeepSeekChatModel;
 import org.springframework.stereotype.Service;
@@ -20,6 +20,6 @@ public class DeepSeekStrategy implements ChatModelStrategy {
 
     @Override
     public String getPlatformName() {
-        return AIPlatform.DEEPSEEK.name();
+        return ChatModelEnum.DEEPSEEK.name();
     }
 }
