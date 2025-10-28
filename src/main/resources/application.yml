@@ -2,9 +2,9 @@ spring:
   application:
     name: ChatReact
   datasource:
-    url: jdbc:mysql://localhost:3306/chatmemory
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
+    url: jdbc:postgresql://localhost:5432/postgres
+    driver-class-name: org.postgresql.Driver
+    username: postgres
     password: 12345678
 
   ai:
@@ -15,9 +15,9 @@ spring:
         options:
           model: qwen-plus-2025-09-11
           temperature: 0.7
-      embedding:
-        options:
-          model: text-embedding-v4
+    #      embedding:
+    #        options:
+    #          model: text-embedding-v4
     # 引入deepseek
     deepseek:
       api-key: sk-72b6f63b5099437d94ca8b5cd370b8c8
@@ -36,7 +36,10 @@ spring:
     ollama:
       base-url: http://localhost:11434
       chat:
-        model: llama3.1:latest
+        model: gemma3:latest
+      embedding:
+        options:
+          model: qwen3-embedding:latest
 
 
 

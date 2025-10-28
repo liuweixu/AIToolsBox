@@ -36,3 +36,8 @@ build/
 /src/main/resources/prompt/
 /src/test/java/org/example/chatreact/UnityAppTest.java
 /ToDO.md
+/src/test/java/org/example/chatreact/PgVectorVectorStoreConfigTest.java
+/tmp/
+/src/test/java/org/example/chatreact/FileOperationToolTest.java
+/src/test/java/org/example/chatreact/WebScrapingToolTest.java
+/src/test/java/org/example/chatreact/test/

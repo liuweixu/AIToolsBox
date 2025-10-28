@@ -1,17 +1,14 @@
 package org.example.chatreact.app;
 
-import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.chatreact.advisor.MyLoggerAdvisor;
-import org.example.chatreact.chatmemory.FileBasedChatMemory;
 import org.example.chatreact.chatmodel.ChatModelFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
-import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -65,11 +62,7 @@ public class UnityApp {
      * @param chatModelFactory
      */
     public UnityApp(ChatModelFactory chatModelFactory) {
-
         this.chatModelFactory = chatModelFactory;
-        // 初始化基于文件的对话记忆
-//        String fileDir = System.getProperty("user.dir") + "/chat-memory";
-//        ChatMemory chatMemory = new FileBasedChatMemory(fileDir);
     }
 
     /**
@@ -112,6 +105,7 @@ public class UnityApp {
      *
      * @param message
      * @param chatId
+     * @param modelName
      * @return
      */
     public String doChat(String message, String chatId, String modelName) {

@@ -7,7 +7,7 @@ import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.stereotype.Service;
 
 @Service
-public class Ollamatrategy implements ChatModelStrategy {
+public class OllamaStrategy implements ChatModelStrategy {
 
     @Resource
     private OllamaChatModel ollamaChatModel;
