@@ -13,8 +13,7 @@ spring:
       api-key: sk-2bad25356fc546fa85f792652b34af8e
       chat:
         options:
-          model: qwen-plus-2025-09-11
-          temperature: 0.7
+          model: qwen3-vl-plus
     #      embedding:
     #        options:
     #          model: text-embedding-v4
@@ -36,11 +35,31 @@ spring:
     ollama:
       base-url: http://localhost:11434
       chat:
-        model: gemma3:latest
+        model: qwen3:latest
       embedding:
         options:
           model: qwen3-embedding:latest
 
+    # mcp配置
+    mcp:
+      client:
+        enabled: true
+        name: my-mcp-client
+        version: 1.0.0
+        request-timeout: 30s
+        type: SYNC
+        sse:
+          connections:
+            server1:
+              url: http://localhost:8080
+        stdio:
+          connections:
+            server1:
+              command: /path/to/server
+              args:
+                - --port=8080
+              env:
+                API_KEY: your-api-key
 
 
   # Redis设置

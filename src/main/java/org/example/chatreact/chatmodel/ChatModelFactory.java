@@ -1,6 +1,7 @@
 package org.example.chatreact.chatmodel;
 
 import org.example.chatreact.chatmodel.models.ChatModelStrategy;
+import org.example.chatreact.enums.ChatModelEnum;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.stereotype.Service;
 

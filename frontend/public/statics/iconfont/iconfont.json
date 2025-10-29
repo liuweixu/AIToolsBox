@@ -1,0 +1,58 @@
+{
+  "id": "4927838",
+  "name": "UX",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "76209",
+      "name": "quoteleft",
+      "font_class": "quoteleft",
+      "unicode": "e627",
+      "unicode_decimal": 58919
+    },
+    {
+      "icon_id": "76210",
+      "name": "quoteright",
+      "font_class": "quoteright",
+      "unicode": "e628",
+      "unicode_decimal": 58920
+    },
+    {
+      "icon_id": "10491886",
+      "name": "icon_caidan",
+      "font_class": "icon_caidan",
+      "unicode": "e642",
+      "unicode_decimal": 58946
+    },
+    {
+      "icon_id": "1980224",
+      "name": "attention_light",
+      "font_class": "attention_light",
+      "unicode": "e7f4",
+      "unicode_decimal": 59380
+    },
+    {
+      "icon_id": "1127387",
+      "name": "时钟",
+      "font_class": "time",
+      "unicode": "e619",
+      "unicode_decimal": 58905
+    },
+    {
+      "icon_id": "3105086",
+      "name": "icon_mark",
+      "font_class": "icon_mark",
+      "unicode": "e607",
+      "unicode_decimal": 58887
+    },
+    {
+      "icon_id": "3989717",
+      "name": "icon_file",
+      "font_class": "icon_file",
+      "unicode": "e699",
+      "unicode_decimal": 59033
+    }
+  ]
+}

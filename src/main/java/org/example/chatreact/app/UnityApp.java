@@ -12,6 +12,7 @@ import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -29,6 +30,10 @@ public class UnityApp {
 
     @Resource
     private ChatMemoryRepository chatMemoryRepository;
+
+    // 导入工厂
+    @Resource
+    private ToolCallback[] toolCallbacks;
 
     /**
      * 系统提示词
@@ -147,6 +152,23 @@ public class UnityApp {
                 .entity(UnityReport.class);
         log.info("Unity report: {}", unityReport);
         return unityReport;
+    }
+
+    public String doChatWithTools(String message, String chatId, String modelName) {
+        ChatClient chatClient = chatClientCache.get(modelName);
+        ChatResponse response = chatClient
+                .prompt()
+                .user(message)
+                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId)
+                        .param(ChatMemory.CONVERSATION_ID, 10))
+                //TODO  开启日志，观察效果
+//                .advisors(new MyLoggerAdvisor())
+                .toolCallbacks(toolCallbacks)
+                .call()
+                .chatResponse();
+        String content = response.getResult().getOutput().getText();
+        log.info("content: {}", content);
+        return content;
     }
 }
 

@@ -15,7 +15,7 @@ import java.nio.file.Paths;
 
 public class ResourceDownloadTool {
 
-    @Tool(description = "Download a resource from a given URL")
+    @Tool(description = "Download a resource from a given URL", returnDirect = true)
     public String downloadResource(@ToolParam(description = "URL of the resource to download") String url,
                                    @ToolParam(description = "Name of the file to save the downloaded resource") String fileName) {
         String fileDir = FileConstant.FILE_SAVE_DIR + "/download";
@@ -24,7 +24,6 @@ public class ResourceDownloadTool {
         try {
             // 创建目录
             Files.createDirectories(Paths.get(fileDir));
-
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
             HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
@@ -32,7 +31,6 @@ public class ResourceDownloadTool {
             try (FileOutputStream fos = new FileOutputStream(filePath)) {
                 fos.write(response.body());
             }
-
             return "Resource downloaded successfully to: " + filePath;
         } catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();

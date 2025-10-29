@@ -1,4 +1,4 @@
-package org.example.chatreact.chatmodel;
+package org.example.chatreact.enums;
 
 public enum ChatModelEnum {
 

@@ -4,6 +4,9 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+frontend/node_modules
+frontend/.idea
+
 ### STS ###
 .apt_generated
 .classpath
