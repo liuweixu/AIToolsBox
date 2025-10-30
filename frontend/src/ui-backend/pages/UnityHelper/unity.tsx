@@ -1,141 +1,168 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Avatar, Button, Card, Flex, Input, Layout, Space, Typography } from 'antd'
-import { UserOutlined, RobotOutlined, SendOutlined } from '@ant-design/icons'
+import { useEffect, useRef, useState } from 'react'
 
-type ChatMessage = {
-  id: string
+type Message = {
   role: 'user' | 'assistant'
   content: string
-  pending?: boolean // streaming
 }
 
-function generateMemoryId(): number {
-  // 简单生成一个 6 位数字 id
-  return Math.floor(100000 + Math.random() * 900000)
-}
+const MODEL_OPTIONS = [
+  { label: '阿里', value: 'Ali' },
+  { label: 'Ollama', value: 'Ollama' },
+  { label: '智谱', value: 'Zhipu' },
+  { label: 'DeepSeek', value: 'DeepSeek' }
+]
 
 export const Unity = () => {
-  const [memoryId] = useState<number>(() => generateMemoryId())
+  const [chatId, setChatId] = useState<string>('')
+  const [modelName, setModelName] = useState<string>(MODEL_OPTIONS[0].value)
   const [input, setInput] = useState<string>('')
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
-  const sseRef = useRef<EventSource | null>(null)
-  const listEndRef = useRef<HTMLDivElement | null>(null)
-
-  const apiBase = useMemo(() => '/api', [])
+  const [messages, setMessages] = useState<Message[]>([])
+  const [streaming, setStreaming] = useState<boolean>(false)
+  const eventSourceRef = useRef<EventSource | null>(null)
 
   useEffect(() => {
     return () => {
-      if (sseRef.current) {
-        sseRef.current.close()
+      // 组件卸载时关闭流
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
       }
     }
   }, [])
 
-  //TODO 前端发送消息到后端
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const startSSE = (text: string) => {
-    if (sseRef.current) {
-      sseRef.current.close()
-      sseRef.current = null
+  const handleNewChat = () => {
+    const id = (window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`)
+    setChatId(id)
+    setMessages([])
+  }
+
+  const stopStream = () => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
     }
-    // 先推入用户消息与一个占位的 assistant 空消息
-    const userMsg: ChatMessage = {
-      id: `${Date.now()}-user`,
-      role: 'user',
-      content: text
+    setStreaming(false)
+  }
+
+  const handleSend = () => {
+    if (!input.trim()) return
+    if (!chatId) {
+      // 没有会话则自动新建一个
+      handleNewChat()
     }
-    const aiMsgId = `${Date.now()}-ai`
-    const aiMsg: ChatMessage = {
-      id: aiMsgId,
-      role: 'assistant',
-      content: '',
-      pending: true
-    }
-    setMessages((prev) => [...prev, userMsg, aiMsg])
 
-    const url = new URL(`${apiBase}/ai/chat`, window.location.origin)
+    const currentChatId = chatId || (window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`)
+    if (!chatId) setChatId(currentChatId)
 
-    url.searchParams.set('memoryId', String(memoryId))
-    url.searchParams.set('message', text)
+    // 先落地用户消息
+    setMessages(prev => [...prev, { role: 'user', content: input } as Message, { role: 'assistant', content: '' }])
 
-    // 搭建SSE连接
-    const es = new EventSource(url.toString())
-    sseRef.current = es
+    // 开始流式请求
+    const url = `/chat/sse?message=${encodeURIComponent(input)}&chatId=${encodeURIComponent(currentChatId)}&modelName=${encodeURIComponent(modelName)}`
+    const es = new EventSource(url)
+    eventSourceRef.current = es
+    setStreaming(true)
+    setInput('')
 
-    es.onmessage = (ev) => {
-      const chunk = ev.data ?? ''
-      setMessages((prev) => prev.map((m) => (m.id === aiMsgId ? { ...m, content: m.content + chunk } : m)))
+    es.onmessage = (ev: MessageEvent<string>) => {
+      const chunk = ev.data || ''
+      setMessages(prev => {
+        const next = [...prev]
+        // 将流式片段追加到最后一条 assistant 消息
+        for (let i = next.length - 1; i >= 0; i--) {
+          if (next[i].role === 'assistant') {
+            next[i] = { ...next[i], content: (next[i].content || '') + chunk }
+            break
+          }
+        }
+        return next
+      })
     }
 
     es.onerror = () => {
-      es.close()
-      sseRef.current = null
-      setMessages((prev) => prev.map((m) => (m.id === aiMsgId ? { ...m, pending: false } : m)))
-      setLoading(false)
+      stopStream()
     }
 
     es.onopen = () => {
-      setLoading(false)
-    }
-  }
-
-  const handleSend = async () => {
-    const text = input.trim()
-    if (!text) return
-    setInput('')
-    setLoading(true)
-    try {
-      startSSE(text)
-    } catch (e) {
-      setLoading(false)
-      // 发生错误时仅在控制台输出，避免对 Ant Design App 上下文的依赖
-      // eslint-disable-next-line no-console
-      console.error('发送失败', e)
-    }
-  }
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+      // 连接建立
     }
   }
 
   return (
-    <Layout style={{ height: 'calc(90vh - 100px)' }}>
-      <Layout.Content style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 16px)', padding: '16px' }}>
-        <Card style={{ flex: 1, overflow: 'hidden', marginBottom: '16px' }}>
-          <Space direction="vertical" style={{ width: '100%' }} size={16}>
-            {messages.map((msg) => (
-              <Flex key={msg.id} justify={msg.role === 'user' ? 'flex-end' : 'flex-start'}>
-                {msg.role === 'assistant' && <Avatar style={{ background: '#1677ff' }} icon={<RobotOutlined />} />}
-                <div className={msg.role === 'user' ? 'bubble user' : 'bubble ai'}>
-                  <Typography.Text style={{ whiteSpace: 'pre-wrap' }}>
-                    {msg.content || (msg.pending ? '...' : '')}
-                  </Typography.Text>
-                </div>
-                {msg.role === 'user' && <Avatar style={{ background: '#87d068', marginLeft: 8 }} icon={<UserOutlined />} />}
-              </Flex>
+    <div className="flex h-[calc(100vh-0px)] bg-white">
+      {/* 左侧会话与操作栏（简约） */}
+      <div className="w-64 border-r border-gray-200 p-4 flex flex-col gap-3">
+        <div className="text-lg font-semibold">Unity 助手</div>
+        <button
+          className="px-3 py-2 rounded-md bg-black text-white disabled:opacity-60"
+          onClick={handleNewChat}
+        >
+          新建对话
+        </button>
+        <div className="text-xs text-gray-500 break-all">ChatID：{chatId || '未创建'}</div>
+        <div>
+          <label className="text-sm text-gray-600">选择模型</label>
+          <select
+            className="mt-1 w-full border border-gray-300 rounded-md p-2"
+            value={modelName}
+            onChange={e => setModelName(e.target.value)}
+          >
+            {MODEL_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
-            <div ref={listEndRef} />
-          </Space>
-        </Card>
-        <div style={{ padding: '8px 0' }}>
-          <Flex gap={8}>
-            <Input
-              placeholder="请输入你的问题..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={loading}
-            />
-            <Button type="primary" icon={<SendOutlined />} onClick={handleSend} loading={loading}>
-              发送
-            </Button>
-          </Flex>
+          </select>
         </div>
-      </Layout.Content>
-    </Layout>
+      </div>
+
+      {/* 右侧聊天区 */}
+      <div className="flex-1 flex flex-col">
+        <div className="flex-1 overflow-auto p-6 space-y-4">
+          {messages.length === 0 && (
+            <div className="text-center text-gray-400 mt-24">今天有什么可以帮助到你？</div>
+          )}
+          {messages.map((m, idx) => (
+            <div key={idx} className={m.role === 'user' ? 'text-right' : 'text-left'}>
+              <div
+                className={
+                  'inline-block max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 ' +
+                  (m.role === 'user' ? 'bg-black text-white' : 'bg-gray-100 text-gray-900')
+                }
+              >
+                {m.content || (m.role === 'assistant' && streaming ? '思考中…' : '')}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 输入区 */}
+        <div className="border-t border-gray-200 p-4">
+          <div className="flex items-end gap-2">
+            <textarea
+              className="flex-1 border border-gray-300 rounded-md p-3 min-h-[48px] max-h-40 resize-y"
+              placeholder="输入你的问题…"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              disabled={streaming}
+            />
+            <button
+              className="px-4 py-2 rounded-md bg-black text-white disabled:opacity-60"
+              onClick={handleSend}
+              disabled={streaming || !input.trim()}
+            >
+              发送
+            </button>
+            {streaming && (
+              <button
+                className="px-3 py-2 rounded-md border border-gray-300"
+                onClick={stopStream}
+              >
+                停止
+              </button>
+            )}
+          </div>
+          <div className="text-xs text-gray-400 mt-2">后端 SSE 接口：/chat/sse</div>
+        </div>
+      </div>
+    </div>
   )
 }
