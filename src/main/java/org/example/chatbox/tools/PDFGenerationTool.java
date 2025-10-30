@@ -16,7 +16,7 @@ import java.nio.file.Path;
 
 public class PDFGenerationTool {
     @Tool(
-            description = "Generate a PDF file with the given content. Use this when user asks to create, generate, or save a PDF document.",
+            description = "Generate a Chinese PDF file with the given content. Use this when user asks to create, generate, or save a PDF document.",
             returnDirect = true
     )
     public String generatePDF(

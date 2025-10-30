@@ -8,15 +8,12 @@ spring:
     password: 12345678
 
   ai:
-    # 引入阿里千问
     dashscope:
       api-key: sk-2bad25356fc546fa85f792652b34af8e
+      # 引入阿里千问
       chat:
         options:
           model: qwen-plus-2025-07-28
-    #      embedding:
-    #        options:
-    #          model: text-embedding-v4
     # 引入deepseek
     deepseek:
       api-key: sk-72b6f63b5099437d94ca8b5cd370b8c8
@@ -54,3 +51,11 @@ spring:
 logging:
   level:
     org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor: debug
+
+# 引入阿里万相自定义
+alibaba:
+  image:
+    model:
+      base_url: https://dashscope.aliyuncs.com/api/v1
+      api_key: sk-2bad25356fc546fa85f792652b34af8e
+      model_name: wan2.5-t2i-preview

@@ -14,6 +14,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.Map;
@@ -154,6 +155,14 @@ public class UnityApp {
         return unityReport;
     }
 
+    /**
+     * UnityApp工具调用
+     *
+     * @param message
+     * @param chatId
+     * @param modelName
+     * @return
+     */
     public String doChatWithTools(String message, String chatId, String modelName) {
         ChatClient chatClient = chatClientCache.get(modelName);
         ChatResponse response = chatClient
@@ -169,6 +178,25 @@ public class UnityApp {
         String content = response.getResult().getOutput().getText();
         log.info("content: {}", content);
         return content;
+    }
+
+    /**
+     * Flus 流式输出
+     *
+     * @param message
+     * @param chatId
+     * @param modelName
+     * @return
+     */
+    public Flux<String> doChatByStream(String message, String chatId, String modelName) {
+        ChatClient chatClient = chatClientCache.get(modelName);
+        return chatClient
+                .prompt()
+                .user(message)
+                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId)
+                        .param(ChatMemory.CONVERSATION_ID, 10))
+                .stream()
+                .content();
     }
 }
 
