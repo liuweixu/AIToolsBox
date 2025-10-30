@@ -35,7 +35,7 @@ build/
 ### VS Code ###
 .vscode/
 /src/main/resources/application_dev.yml
-/src/main/java/org/example/chatreact/test/
+/src/main/java/org/example/chatbox/box/unity/test/
 /src/main/resources/prompt/
 /src/test/java/org/example/chatreact/UnityAppTest.java
 /ToDO.md
@@ -44,3 +44,5 @@ build/
 /src/test/java/org/example/chatreact/FileOperationToolTest.java
 /src/test/java/org/example/chatreact/WebScrapingToolTest.java
 /src/test/java/org/example/chatreact/test/
+/src/main/java/org/example/chatbox/box/unity/test/
+/src/test/java/org/example/chatbox/test/
