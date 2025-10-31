@@ -1,11 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef } from 'react'
 import { Button, Input, Select, Space } from 'antd'
 import { PaperClipOutlined, SendOutlined } from '@ant-design/icons'
-import { Conversation } from './conversation'
 import { marked } from 'marked'
 import 'github-markdown-css/github-markdown.css'
 import './style.css'
 import { createChatUnity } from '@/ui-backend/apis/unity'
+import { useParams, useNavigate } from 'react-router-dom'
+
+import { DeleteOutlined } from '@ant-design/icons'
+import { Conversations } from '@ant-design/x'
+import type { ConversationsProps } from '@ant-design/x'
+import { theme, type GetProp } from 'antd'
+import { useEffect, useState } from 'react'
+import InfiniteScroll from 'react-infinite-scroll-component'
+import { deleteChatUnity, getChatUnityList } from '@/ui-backend/apis/unity'
 
 const { TextArea } = Input
 
@@ -34,13 +42,40 @@ const MODEL_OPTIONS = [
 ]
 
 export const Unity = () => {
+  const { id } = useParams<{ id?: string }>()
+  const navigate = useNavigate()
   const [chats, setChats] = useState<Chat[]>([])
-  const [activeChatId, setActiveChatId] = useState<string>('')
+  const [activeChatId, setActiveChatId] = useState<string>(id || '')
   const [modelName, setModelName] = useState<string>(MODEL_OPTIONS[0].value)
   const [input, setInput] = useState<string>('')
   const [streaming, setStreaming] = useState<boolean>(false)
   const eventSourceRef = useRef<EventSource | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0)
+
+  // 监听路由参数变化，同步到 activeChatId
+  useEffect(() => {
+    if (id) {
+      setActiveChatId(id)
+      // 如果本地没有该会话的消息，初始化一个空的会话数据结构
+      setChats((prev) => {
+        if (!prev.find((c) => c.id === id)) {
+          return [...prev, { id, title: '对话', messages: [] }]
+        }
+        return prev
+      })
+    } else {
+      setActiveChatId('')
+    }
+  }, [id])
+
+  // 当 activeChatId 改变时，同步更新 URL
+  useEffect(() => {
+    if (activeChatId && activeChatId !== id) {
+      navigate(`/unityhelper/${activeChatId}`, { replace: true })
+    } else if (!activeChatId && id) {
+      navigate('/unityhelper', { replace: true })
+    }
+  }, [activeChatId, id, navigate])
 
   useEffect(() => {
     return () => {
@@ -57,11 +92,12 @@ export const Unity = () => {
    */
   const handleNewChat = async () => {
     const res = await createChatUnity()
-    console.log(res.data)
-    const id = res.data.id
-    setActiveChatId(id)
-    setChats((prev) => [...prev, { id, title: '新对话', messages: [] }])
+    const newId = res.data.data.id
+    setActiveChatId(newId)
+    setChats((prev) => [...prev, { id: newId, title: '新对话', messages: [] }])
     setRefreshTrigger((prev) => prev + 1)
+    // 跳转到新会话的 URL
+    navigate(`/unityhelper/${newId}`)
   }
 
   const stopStream = () => {
@@ -72,15 +108,22 @@ export const Unity = () => {
     setStreaming(false)
   }
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return
-    if (!activeChatId) {
-      // 没有会话则自动新建一个
-      handleNewChat()
+    let currentChatId = activeChatId
+    // 如果没有会话则自动新建一个，并等待完成
+    if (!currentChatId) {
+      const res = await createChatUnity()
+      currentChatId = res.data.id
+      setActiveChatId(currentChatId)
+      // 先添加到 chats 中
+      setChats((prev) => [...prev, { id: currentChatId, title: '新对话', messages: [] }])
+      setRefreshTrigger((prev) => prev + 1)
+      // 跳转到新会话的 URL
+      navigate(`/unityhelper/${currentChatId}`)
     }
 
-    const currentChatId = activeChatId
-    if (!activeChatId) setActiveChatId(currentChatId)
+    const messageInput = input
 
     // 先落地用户消息到指定会话
     setChats((prev) => {
@@ -88,10 +131,10 @@ export const Unity = () => {
         if (c.id !== currentChatId) return c
         const updatedMessages: Message[] = [
           ...c.messages,
-          { role: 'user' as const, content: input },
+          { role: 'user' as const, content: messageInput },
           { role: 'assistant' as const, content: '' }
         ]
-        const updatedTitle = c.title === '新对话' ? input.slice(0, 20) || '新对话' : c.title
+        const updatedTitle = c.title === '新对话' ? messageInput.slice(0, 20) || '新对话' : c.title
         return { ...c, messages: updatedMessages, title: updatedTitle }
       })
       // 若是刚刚自动创建的会话（active 但列表里还没有），补充创建
@@ -99,9 +142,9 @@ export const Unity = () => {
         return [
           {
             id: currentChatId,
-            title: input.slice(0, 20) || '新对话',
+            title: messageInput.slice(0, 20) || '新对话',
             messages: [
-              { role: 'user' as const, content: input },
+              { role: 'user' as const, content: messageInput },
               { role: 'assistant' as const, content: '' }
             ]
           },
@@ -112,14 +155,13 @@ export const Unity = () => {
     })
 
     // 开始流式请求
-    const url = `/api/unity/chat/sse?message=${encodeURIComponent(input)}&chatId=${encodeURIComponent(
+    const url = `/api/unity/model/sse?message=${encodeURIComponent(messageInput)}&chatId=${encodeURIComponent(
       currentChatId
     )}&modelName=${encodeURIComponent(modelName)}`
     const es = new EventSource(url)
     eventSourceRef.current = es
     setStreaming(true)
     setInput('')
-
     es.onmessage = (ev: MessageEvent<string>) => {
       try {
         // 后端返回的是 JSON 格式：{"datastream": "实际内容"}
@@ -170,6 +212,69 @@ export const Unity = () => {
     }
   }
 
+  const { token } = theme.useToken()
+  const [chatList, setChatList] = useState<GetProp<ConversationsProps, 'items'>>([])
+
+  const style = {
+    width: '100%',
+    background: token.colorBgContainer,
+    borderRadius: token.borderRadius
+  }
+
+  // 提取获取列表的逻辑为独立函数
+  const getChatList = async () => {
+    const res = await getChatUnityList()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = res.data.data.map((item: any) => ({
+      key: item.id,
+      label: `对话${item.summary}`,
+      disabled: false
+    }))
+    setChatList(data)
+  }
+
+  // 初始化加载：只在组件挂载时执行
+  useEffect(() => {
+    getChatList()
+  }, [])
+
+  // 监听刷新触发器：当 refreshTrigger 变化时刷新
+  useEffect(() => {
+    if (refreshTrigger !== undefined) {
+      getChatList()
+    }
+  }, [refreshTrigger])
+
+  const menuConfig: ConversationsProps['menu'] = (conversation) => ({
+    items: [
+      {
+        label: '删除对话',
+        key: 'deleteConversation',
+        icon: <DeleteOutlined />,
+        danger: true
+      }
+    ],
+    onClick: (menuInfo) => {
+      menuInfo.domEvent.stopPropagation()
+      deleteChatUnity(conversation.key)
+        .then(() => {
+          // 调用删除回调，让父组件同步更新状态
+          setChatList((prev) => prev.filter((c) => c.key !== conversation.key))
+          return getChatList()
+        })
+        .catch((err) => {
+          console.log(err)
+        })
+    }
+  })
+
+  // 处理会话切换 - 使用 onActiveChange
+  const handleActiveChange = (chatId: string) => {
+    console.log('切换到会话:', chatId)
+    setActiveChatId(chatId)
+    navigate(`/unityhelper/${chatId}`)
+  }
+
   return (
     <div className="flex h-[calc(100vh-96px)] min-h-0 bg-white">
       {/* 左侧会话与操作栏（保留会话，可删除） */}
@@ -181,9 +286,24 @@ export const Unity = () => {
           className="w-full !bg-white !text-gray-900 !border-0 !rounded-full !shadow-sm hover:!bg-gray-50 !h-auto !py-3 !px-6 !flex !items-center !justify-center !gap-2 flex-shrink-0">
           开启新对话
         </Button>
-        <div className="text-xs text-gray-500 flex-shrink-0">共 {chats.length} 个对话</div>
+        <div className="text-xs text-gray-500 flex-shrink-0"> 共计 {chatList.length} 条对话</div>
         <div className="flex-1 min-h-0">
-          <Conversation refreshTrigger={refreshTrigger} />
+          <div id="scrollableDiv" style={{ height: '100%', overflow: 'auto' }}>
+            <InfiniteScroll
+              dataLength={chatList.length}
+              hasMore={false}
+              next={() => {}}
+              loader={<div>Loading...</div>}
+              scrollableTarget="scrollableDiv">
+              <Conversations
+                activeKey={activeChatId}
+                onActiveChange={handleActiveChange}
+                menu={menuConfig}
+                items={chatList}
+                style={style}
+              />
+            </InfiniteScroll>
+          </div>
         </div>
       </div>
 

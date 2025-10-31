@@ -32,7 +32,7 @@ spring:
     ollama:
       base-url: http://localhost:11434
       chat:
-        model: qwen3:latest
+        model: gemma3:270m
       embedding:
         options:
           model: qwen3-embedding:latest

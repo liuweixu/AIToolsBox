@@ -30,6 +30,14 @@ export const Router = () => {
           }
         />
         <Route
+          path="unityhelper/:id"
+          element={
+            <Suspense fallback={'加载中'}>
+              <UnityHelper />
+            </Suspense>
+          }
+        />
+        <Route
           path="unityhelper"
           element={
             <Suspense fallback={'加载中'}>
