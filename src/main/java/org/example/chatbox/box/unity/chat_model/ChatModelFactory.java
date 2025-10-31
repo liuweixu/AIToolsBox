@@ -1,6 +1,6 @@
-package org.example.chatbox.box.unity.chatmodel;
+package org.example.chatbox.box.unity.chat_model;
 
-import org.example.chatbox.box.unity.chatmodel.models.ChatModelStrategy;
+import org.example.chatbox.box.unity.chat_model.models.ChatModelStrategy;
 import org.example.chatbox.box.unity.enums.ChatModelEnum;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.stereotype.Service;

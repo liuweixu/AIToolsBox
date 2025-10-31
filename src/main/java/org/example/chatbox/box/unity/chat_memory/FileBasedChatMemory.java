@@ -1,4 +1,4 @@
-package org.example.chatbox.box.unity.chatmemory;
+package org.example.chatbox.box.unity.chat_memory;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;

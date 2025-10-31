@@ -3,16 +3,16 @@ import { Button, Input, Select, Space } from 'antd'
 import { PaperClipOutlined, SendOutlined } from '@ant-design/icons'
 import { Conversation } from './conversation'
 import { marked } from 'marked'
-// @ts-ignore - github-markdown-css 可能没有类型声明
 import 'github-markdown-css/github-markdown.css'
 import './style.css'
+import { createChatUnity } from '@/ui-backend/apis/unity'
 
 const { TextArea } = Input
 
 // 配置 marked
 marked.setOptions({
   breaks: true, // 支持换行
-  gfm: true, // 支持 GitHub 风格的 Markdown
+  gfm: true // 支持 GitHub 风格的 Markdown
 })
 
 type Message = {
@@ -40,6 +40,7 @@ export const Unity = () => {
   const [input, setInput] = useState<string>('')
   const [streaming, setStreaming] = useState<boolean>(false)
   const eventSourceRef = useRef<EventSource | null>(null)
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0)
 
   useEffect(() => {
     return () => {
@@ -51,11 +52,16 @@ export const Unity = () => {
     }
   }, [])
 
-  const handleNewChat = () => {
-    const id = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
-    const newChat: Chat = { id, title: '新对话', messages: [] }
-    setChats((prev) => [newChat, ...prev])
+  /**
+   * 创建对话框
+   */
+  const handleNewChat = async () => {
+    const res = await createChatUnity()
+    console.log(res.data)
+    const id = res.data.id
     setActiveChatId(id)
+    setChats((prev) => [...prev, { id, title: '新对话', messages: [] }])
+    setRefreshTrigger((prev) => prev + 1)
   }
 
   const stopStream = () => {
@@ -73,7 +79,7 @@ export const Unity = () => {
       handleNewChat()
     }
 
-    const currentChatId = activeChatId || window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const currentChatId = activeChatId
     if (!activeChatId) setActiveChatId(currentChatId)
 
     // 先落地用户消息到指定会话
@@ -120,7 +126,7 @@ export const Unity = () => {
         const rawData = ev.data || '{}'
         const data = JSON.parse(rawData)
         const chunk = data.datastream !== undefined ? data.datastream : ''
-        
+
         // 即使 chunk 为空字符串也更新（可能是流式数据的一部分）
         setChats((prev) =>
           prev.map((c) => {
@@ -172,13 +178,12 @@ export const Unity = () => {
         <Button
           size="large"
           onClick={handleNewChat}
-          className="w-full !bg-white !text-gray-900 !border-0 !rounded-full !shadow-sm hover:!bg-gray-50 !h-auto !py-3 !px-6 !flex !items-center !justify-center !gap-2 flex-shrink-0"
-          >
+          className="w-full !bg-white !text-gray-900 !border-0 !rounded-full !shadow-sm hover:!bg-gray-50 !h-auto !py-3 !px-6 !flex !items-center !justify-center !gap-2 flex-shrink-0">
           开启新对话
         </Button>
         <div className="text-xs text-gray-500 flex-shrink-0">共 {chats.length} 个对话</div>
         <div className="flex-1 min-h-0">
-          <Conversation />
+          <Conversation refreshTrigger={refreshTrigger} />
         </div>
       </div>
 
@@ -204,10 +209,10 @@ export const Unity = () => {
                         fontSize: '14px',
                         lineHeight: '1.6',
                         color: '#24292f',
-                        backgroundColor: 'transparent',
+                        backgroundColor: 'transparent'
                       }}
                       dangerouslySetInnerHTML={{
-                        __html: marked.parse(m.content) as string,
+                        __html: marked.parse(m.content) as string
                       }}
                     />
                   ) : m.role === 'user' ? (
@@ -226,7 +231,7 @@ export const Unity = () => {
           <div className="relative rounded-2xl border border-gray-300 bg-white">
             <TextArea
               className="!rounded-2xl !border-0 !shadow-none !resize-none"
-              placeholder={`给 ${MODEL_OPTIONS.find(opt => opt.value === modelName)?.label || 'AI'} 发送消息`}
+              placeholder={`给 ${MODEL_OPTIONS.find((opt) => opt.value === modelName)?.label || 'AI'} 发送消息`}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -238,15 +243,15 @@ export const Unity = () => {
               disabled={streaming}
               autoSize={false}
               rows={5}
-              style={{ 
-                fontSize: '14px', 
-                padding: '12px 16px', 
+              style={{
+                fontSize: '14px',
+                padding: '12px 16px',
                 paddingBottom: '80px',
                 minHeight: '50px',
                 maxHeight: '100px'
               }}
             />
-            
+
             {/* 底部操作栏（绝对定位在输入框内部） */}
             <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between pointer-events-none">
               {/* 左侧功能按钮 */}
@@ -270,11 +275,7 @@ export const Unity = () => {
                   disabled={streaming}
                 />
                 {streaming ? (
-                  <Button
-                    type="default"
-                    className="!border-gray-300"
-                    onClick={stopStream}
-                  >
+                  <Button type="default" className="!border-gray-300" onClick={stopStream}>
                     停止
                   </Button>
                 ) : (

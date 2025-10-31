@@ -4,7 +4,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.chatbox.box.unity.advisor.MyLoggerAdvisor;
-import org.example.chatbox.box.unity.chatmodel.ChatModelFactory;
+import org.example.chatbox.box.unity.chat_model.ChatModelFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;

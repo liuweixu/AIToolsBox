@@ -1,4 +1,4 @@
-package org.example.chatbox.controller;
+package org.example.chatbox.box.unity.controller;
 
 import com.alibaba.dashscope.utils.JsonUtils;
 import jakarta.annotation.Resource;
@@ -16,14 +16,14 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/unity")
+@RequestMapping("/unity/model")
 @Slf4j
 public class UnityController {
 
     @Resource
     private UnityApp unityApp;
 
-    @GetMapping(value = "/chat/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<String>> doChatWithUnityAppSSE(
             @RequestParam String message,
             @RequestParam String chatId,

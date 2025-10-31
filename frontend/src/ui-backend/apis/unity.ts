@@ -1,9 +1,26 @@
 import { request } from "@/ui-backend/utils";
 
-// 1. 获取日志记录信息
-export function chatWithUnity(){
+// 1. 在Unity助手创建对话框
+export function createChatUnity(){
     return request({
-        url: "/api/backend/logging",
+        url: "/api/unity/chat/create",
+        method: "GET"
+    })
+}
+
+// 2. 在Unity助手删除对话框
+export function deleteChatUnity(id: string) {
+    return request({
+        url: "/api/unity/chat/delete",
+        method: "POST",
+        data: {id: id}
+    })
+}
+
+// 3. 获取Unity对话列表
+export function getChatUnityList() {
+    return request({
+        url: "/api/unity/chat/list",
         method: "GET"
     })
 }

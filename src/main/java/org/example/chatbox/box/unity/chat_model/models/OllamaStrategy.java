@@ -1,25 +1,25 @@
-package org.example.chatbox.box.unity.chatmodel.models;
+package org.example.chatbox.box.unity.chat_model.models;
 
 import jakarta.annotation.Resource;
 import org.example.chatbox.box.unity.enums.ChatModelEnum;
 import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.deepseek.DeepSeekChatModel;
+import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.stereotype.Service;
 
 @Service
-public class DeepSeekStrategy implements ChatModelStrategy {
+public class OllamaStrategy implements ChatModelStrategy {
 
     @Resource
-    private DeepSeekChatModel deepSeekChatModel;
+    private OllamaChatModel ollamaChatModel;
 
 
     @Override
     public ChatModel createChatModel() {
-        return deepSeekChatModel;
+        return ollamaChatModel;
     }
 
     @Override
     public String getPlatformName() {
-        return ChatModelEnum.DEEPSEEK.name();
+        return ChatModelEnum.OLLAMA.name();
     }
 }
