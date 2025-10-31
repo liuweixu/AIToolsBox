@@ -1,6 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button } from 'antd'
+import { Button, Input, Select, Space } from 'antd'
+import { PaperClipOutlined, SendOutlined } from '@ant-design/icons'
 import { Conversation } from './conversation'
+import { marked } from 'marked'
+// @ts-ignore - github-markdown-css 可能没有类型声明
+import 'github-markdown-css/github-markdown.css'
+import './style.css'
+
+const { TextArea } = Input
+
+// 配置 marked
+marked.setOptions({
+  breaks: true, // 支持换行
+  gfm: true, // 支持 GitHub 风格的 Markdown
+})
 
 type Message = {
   role: 'user' | 'assistant'
@@ -14,10 +27,10 @@ type Chat = {
 }
 
 const MODEL_OPTIONS = [
-  { label: '阿里', value: 'Ali' },
-  { label: 'Ollama', value: 'Ollama' },
-  { label: '智谱', value: 'Zhipu' },
-  { label: 'DeepSeek', value: 'DeepSeek' }
+  { label: '阿里', value: 'DASHSCOPE' },
+  { label: 'Ollama', value: 'OLLAMA' },
+  { label: '智谱', value: 'ZHIPUAI' },
+  { label: 'DeepSeek', value: 'DEEPSEEK' }
 ]
 
 export const Unity = () => {
@@ -93,7 +106,7 @@ export const Unity = () => {
     })
 
     // 开始流式请求
-    const url = `/chat/sse?message=${encodeURIComponent(input)}&chatId=${encodeURIComponent(
+    const url = `/api/unity/chat/sse?message=${encodeURIComponent(input)}&chatId=${encodeURIComponent(
       currentChatId
     )}&modelName=${encodeURIComponent(modelName)}`
     const es = new EventSource(url)
@@ -102,28 +115,52 @@ export const Unity = () => {
     setInput('')
 
     es.onmessage = (ev: MessageEvent<string>) => {
-      const chunk = ev.data || ''
-      setChats((prev) =>
-        prev.map((c) => {
-          if (c.id !== currentChatId) return c
-          const msgs = [...c.messages]
-          for (let i = msgs.length - 1; i >= 0; i--) {
-            if (msgs[i].role === 'assistant') {
-              msgs[i] = { ...msgs[i], content: (msgs[i].content || '') + chunk }
-              break
+      try {
+        // 后端返回的是 JSON 格式：{"datastream": "实际内容"}
+        const rawData = ev.data || '{}'
+        const data = JSON.parse(rawData)
+        const chunk = data.datastream !== undefined ? data.datastream : ''
+        
+        // 即使 chunk 为空字符串也更新（可能是流式数据的一部分）
+        setChats((prev) =>
+          prev.map((c) => {
+            if (c.id !== currentChatId) return c
+            const msgs = [...c.messages]
+            for (let i = msgs.length - 1; i >= 0; i--) {
+              if (msgs[i].role === 'assistant') {
+                msgs[i] = { ...msgs[i], content: (msgs[i].content || '') + chunk }
+                break
+              }
             }
-          }
-          return { ...c, messages: msgs }
-        })
-      )
+            return { ...c, messages: msgs }
+          })
+        )
+      } catch (error) {
+        console.error('解析 SSE 数据失败:', error, '原始数据:', ev.data)
+        // 如果解析失败，尝试直接使用原始数据
+        setChats((prev) =>
+          prev.map((c) => {
+            if (c.id !== currentChatId) return c
+            const msgs = [...c.messages]
+            for (let i = msgs.length - 1; i >= 0; i--) {
+              if (msgs[i].role === 'assistant') {
+                msgs[i] = { ...msgs[i], content: (msgs[i].content || '') + (ev.data || '') }
+                break
+              }
+            }
+            return { ...c, messages: msgs }
+          })
+        )
+      }
     }
+
+    // 监听 done 事件，标记流结束
+    es.addEventListener('done', () => {
+      stopStream()
+    })
 
     es.onerror = () => {
       stopStream()
-    }
-
-    es.onopen = () => {
-      // 连接建立
     }
   }
 
@@ -140,34 +177,6 @@ export const Unity = () => {
           开启新对话
         </Button>
         <div className="text-xs text-gray-500 flex-shrink-0">共 {chats.length} 个对话</div>
-        {/* <div className="mt-1 -mx-2 overflow-auto">
-          {chats.map((chat) => (
-            <div
-              key={chat.id}
-              className={
-                'mx-2 mb-2 rounded-md border flex items-center justify-between gap-2 px-3 py-2 cursor-pointer ' +
-                (chat.id === activeChatId ? 'border-black bg-gray-50' : 'border-gray-200 hover:bg-gray-50')
-              }
-              onClick={() => setActiveChatId(chat.id)}>
-              <div className="truncate text-sm flex-1" title={chat.title}>
-                {chat.title || '新对话'}
-              </div>
-              <button
-                className="text-gray-400 hover:text-red-500 px-2"
-                title="删除对话"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setChats((prev) => prev.filter((c) => c.id !== chat.id))
-                  if (activeChatId === chat.id) {
-                    setActiveChatId((prev) => (prev === chat.id ? chats.find((c) => c.id !== chat.id)?.id || '' : prev))
-                  }
-                }}>
-                …
-              </button>
-            </div>
-          ))}
-          {chats.length === 0 && <div className="text-xs text-gray-400 px-2">暂无对话，点击"新建对话"。</div>}
-        </div> */}
         <div className="flex-1 min-h-0">
           <Conversation />
         </div>
@@ -185,49 +194,106 @@ export const Unity = () => {
               <div key={idx} className={m.role === 'user' ? 'text-right' : 'text-left'}>
                 <div
                   className={
-                    'inline-block max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 ' +
-                    (m.role === 'user' ? 'bg-black text-white' : 'bg-gray-100 text-gray-900')
+                    'inline-block max-w-[80%] rounded-2xl px-4 py-2 ' +
+                    (m.role === 'user' ? 'bg-blue-100 text-black' : 'bg-white text-black')
                   }>
-                  {m.content || (m.role === 'assistant' && streaming ? '思考中…' : '')}
+                  {m.role === 'assistant' && m.content ? (
+                    <div
+                      className="markdown-body"
+                      style={{
+                        fontSize: '14px',
+                        lineHeight: '1.6',
+                        color: '#24292f',
+                        backgroundColor: 'transparent',
+                      }}
+                      dangerouslySetInnerHTML={{
+                        __html: marked.parse(m.content) as string,
+                      }}
+                    />
+                  ) : m.role === 'user' ? (
+                    <div className="whitespace-pre-wrap">{m.content}</div>
+                  ) : (
+                    <div>{streaming ? '思考中…' : ''}</div>
+                  )}
                 </div>
               </div>
             ))}
         </div>
 
-        {/* 输入区（模型选择在发送左侧），固定在底部 */}
+        {/* 输入区，固定在底部 */}
         <div className="border-t border-gray-200 p-4 flex-shrink-0">
-          <div className="flex items-end gap-2">
-            <textarea
-              className="flex-1 border border-gray-300 rounded-md p-3 min-h-[48px] max-h-40 resize-y"
-              placeholder="输入你的问题…"
+          {/* 输入框容器（相对定位，按钮绝对定位在其中） */}
+          <div className="relative rounded-2xl border border-gray-300 bg-white">
+            <TextArea
+              className="!rounded-2xl !border-0 !shadow-none !resize-none"
+              placeholder={`给 ${MODEL_OPTIONS.find(opt => opt.value === modelName)?.label || 'AI'} 发送消息`}
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSend()
+                }
+              }}
               disabled={streaming}
+              autoSize={false}
+              rows={5}
+              style={{ 
+                fontSize: '14px', 
+                padding: '12px 16px', 
+                paddingBottom: '80px',
+                minHeight: '50px',
+                maxHeight: '100px'
+              }}
             />
-            <select
-              className="border border-gray-300 rounded-md p-2"
-              value={modelName}
-              onChange={(e) => setModelName(e.target.value)}
-              disabled={streaming}>
-              {MODEL_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <button
-              className="px-4 py-2 rounded-md bg-black text-white disabled:opacity-60"
-              onClick={handleSend}
-              disabled={streaming || !input.trim()}>
-              发送
-            </button>
-            {streaming && (
-              <button className="px-3 py-2 rounded-md border border-gray-300" onClick={stopStream}>
-                停止
-              </button>
-            )}
+            
+            {/* 底部操作栏（绝对定位在输入框内部） */}
+            <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between pointer-events-none">
+              {/* 左侧功能按钮 */}
+              <Space size="small" className="pointer-events-auto">
+                <Select
+                  className="!w-28 !bg-white"
+                  value={modelName}
+                  onChange={(value) => setModelName(value)}
+                  disabled={streaming}
+                  options={MODEL_OPTIONS}
+                  size="small"
+                />
+              </Space>
+
+              {/* 右侧操作按钮 */}
+              <Space size="small" className="pointer-events-auto">
+                <Button
+                  type="text"
+                  icon={<PaperClipOutlined />}
+                  className="!text-gray-700 hover:!bg-gray-100"
+                  disabled={streaming}
+                />
+                {streaming ? (
+                  <Button
+                    type="default"
+                    className="!border-gray-300"
+                    onClick={stopStream}
+                  >
+                    停止
+                  </Button>
+                ) : (
+                  <Button
+                    type="primary"
+                    shape="circle"
+                    icon={<SendOutlined />}
+                    onClick={handleSend}
+                    disabled={!input.trim()}
+                    className="!bg-blue-500 hover:!bg-blue-600 !border-0 !w-10 !h-10 !flex !items-center !justify-center"
+                  />
+                )}
+              </Space>
+            </div>
           </div>
-          <div className="text-xs text-gray-400 mt-2">后端 SSE 接口：/chat/sse | 当前会话：{activeChatId || '未创建'}</div>
+          {/* 调试信息 */}
+          <div className="mt-2 flex items-center justify-end">
+            <div className="text-xs text-gray-400">后端 SSE 接口：/chat/sse | 当前会话：{activeChatId || '未创建'}</div>
+          </div>
         </div>
       </div>
     </div>
