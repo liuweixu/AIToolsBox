@@ -1,19 +1,11 @@
-import React, { useEffect, useState } from 'react'
-import {
-  UserOutlined,
-  VideoCameraOutlined,
-  AndroidOutlined,
-  HighlightOutlined,
-  DashboardOutlined
-} from '@ant-design/icons'
+import React from 'react'
+import { UserOutlined, VideoCameraOutlined, AndroidOutlined, HighlightOutlined, DashboardOutlined } from '@ant-design/icons'
 import { Layout, Menu, theme } from 'antd'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { isLoginAPI } from '@/ui-backend/apis/user'
 
 const { Sider, Content } = Layout
 
 const App: React.FC = () => {
-
   //路由跳转
   const navigate = useNavigate()
   //高亮
@@ -26,12 +18,10 @@ const App: React.FC = () => {
   } = theme.useToken()
 
   return (
-  
     <Layout>
-      <Sider trigger={null} collapsible collapsed={true} className="h-[calc(100vh-0px)]">
+      <Sider theme="light" trigger={null} collapsible collapsed={true} className="h-[calc(100vh-0px)]">
         <div className="demo-logo-vertical" />
         <Menu
-          theme="dark"
           mode="inline"
           selectedKeys={[selectedKey]}
           items={[
