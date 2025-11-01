@@ -3,6 +3,7 @@ package org.example.chatbox.box.unity.chat_history.service.impl;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.example.chatbox.box.unity.chat_history.entity.ChatHistory;
 import org.example.chatbox.box.unity.chat_history.entity.ChatHistoryQueryRequest;
 import org.example.chatbox.box.unity.chat_history.mapper.ChatHistoryMapper;
@@ -11,9 +12,13 @@ import org.example.chatbox.box.unity.enums.ChatHistoryMessageTypeEnum;
 import org.example.chatbox.exception.ErrorCode;
 import org.example.chatbox.exception.ThrowUtils;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 对话历史 服务层实现。
@@ -21,6 +26,7 @@ import java.time.LocalDateTime;
  * @author <a href="https://github.com/liuweixu">liuweixu</a>
  */
 @Service
+@Slf4j
 public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatHistory> implements ChatHistoryService {
     /**
      * 新增对话历史
@@ -64,6 +70,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     /**
      * 分页查询某一个对话框的对话记录
      * 游标查询服务
+     * this.getQueryWrapper里面就是游标分页查询方法
      *
      * @param unityId
      * @param pageSize
@@ -71,7 +78,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
      * @return
      */
     @Override
-    public Page<ChatHistory> listChatHistoryByUnityPage(Long unityId, int pageSize, LocalDateTime lastCreateTime) {
+    public Page<ChatHistory> listChatHistoryByUnityId(Long unityId, int pageSize, LocalDateTime lastCreateTime) {
         ThrowUtils.throwIf(unityId == null || unityId <= 0, ErrorCode.PARAMS_ERROR, "对话框ID不能为空");
         ThrowUtils.throwIf(pageSize <= 0 || pageSize > 50, ErrorCode.PARAMS_ERROR, "页面大小必须在1-50之间");
         // 构建查询条件
@@ -84,7 +91,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     }
 
     /**
-     * 加载对话历史到内存
+     * 加载对话历史到记忆中
      *
      * @param unityId
      * @param chatMemory
@@ -93,12 +100,41 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
      */
     @Override
     public int loadChatHistoryToMemory(Long unityId, MessageWindowChatMemory chatMemory, int maxCount) {
-        return 0;
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .eq(ChatHistory::getUnityId, unityId)
+                .orderBy(ChatHistory::getCreateTime, false)
+                .limit(1, maxCount);
+        List<ChatHistory> historyList = this.list(queryWrapper);
+        if (historyList == null || historyList.isEmpty()) {
+            return 0;
+        }
+        // 反转列表，确保时间正序
+        historyList = historyList.reversed();
+        // 按时间顺序添加到记忆中
+        int loadedCount = 0;
+        // 先清理历史缓存，防止重复加载
+        try {
+            for (ChatHistory chatHistory : historyList) {
+                if (ChatHistoryMessageTypeEnum.USER.getValue().equals(chatHistory.getMessageType())) {
+                    chatMemory.add(String.valueOf(unityId), new UserMessage(chatHistory.getMessage()));
+                    loadedCount += 1;
+                } else if (ChatHistoryMessageTypeEnum.AI.getValue().equals(chatHistory.getMessageType())) {
+                    chatMemory.add(String.valueOf(unityId), new AssistantMessage(chatHistory.getMessage()));
+                    loadedCount += 1;
+                }
+            }
+            log.info("成功加载了unityId: {}，加载了 {} 条对话", unityId, loadedCount);
+            return loadedCount;
+        } catch (Exception e) {
+            log.error("加载历史对话失败：unityId: {}, error: {}", unityId, e.getMessage());
+            return 0;
+        }
     }
 
     /**
      * 构造查询条件
      * 实现游标分页查询
+     * 数据是按照createTime降序排列
      *
      * @param chatHistoryQueryRequest
      * @return

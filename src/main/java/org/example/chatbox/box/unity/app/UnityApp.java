@@ -5,6 +5,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.chatbox.box.unity.advisor.MyLoggerAdvisor;
+import org.example.chatbox.box.unity.chat_history.service.ChatHistoryService;
 import org.example.chatbox.box.unity.chat_model.ChatModelFactory;
 import org.example.chatbox.box.unity.enums.ChatModelEnum;
 import org.springframework.ai.chat.client.ChatClient;
@@ -17,6 +18,7 @@ import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.deepseek.DeepSeekChatModel;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
@@ -41,6 +43,9 @@ public class UnityApp {
     @Resource
     private ToolCallback[] toolCallbacks;
 
+    @Resource
+    private ChatHistoryService chatHistoryService;
+
     /**
      * 系统提示词
      */
@@ -64,6 +69,8 @@ public class UnityApp {
             
             始终以一位亲切、专业的 Unity 导师身份进行交流，帮助用户真正掌握 Unity 与 C# 游戏开发技能。
             """;
+    @Autowired
+    private ChatMemory chatMemory;
 
 
     /**
@@ -82,7 +89,7 @@ public class UnityApp {
      * @param chatModelName
      * @return
      */
-    private ChatClient createChatClient(String chatModelName) {
+    private ChatClient createChatClient(String chatModelName, String unityId) {
         ChatModel chatModel = this.chatModelFactory.getChatModel(chatModelName);
         log.info("ChatModel for AIPlatform: {}", chatModel);
         // 基于Redis的对话记忆
@@ -91,10 +98,15 @@ public class UnityApp {
                 .maxMessages(20)
                 .build();
 
+        chatHistoryService.loadChatHistoryToMemory(Long.valueOf(unityId), chatMemory, 20);
+        log.info("加载对话历史");
         return ChatClient.builder(chatModel)
                 .defaultSystem(SYSTEM_PROMPT)
                 .defaultAdvisors(
-                        MessageChatMemoryAdvisor.builder(chatMemory).build(),
+                        MessageChatMemoryAdvisor
+                                .builder(chatMemory)
+                                .conversationId(unityId)
+                                .build(),
                         // 自定义日志Advisor
                         new MyLoggerAdvisor()
                 )
@@ -102,30 +114,20 @@ public class UnityApp {
     }
 
 
-    @PostConstruct
-    public void initAllChatClients() {
-        for (String modelName : List.of("DASHSCOPE", "DEEPSEEK", "OLLAMA", "ZHIPUAI")) {
-            chatClientCache.computeIfAbsent(modelName, this::createChatClient);
-        }
-        log.info("所有 ChatClient 初始化完成: {}", chatClientCache.keySet());
-    }
-
-
     /**
      * 基础对话方法 可以实现多轮对话
      *
      * @param message
-     * @param chatId
+     * @param unityId
      * @param modelName
      * @return
      */
-    public String doChat(String message, String chatId, String modelName) {
-        ChatClient chatClient = chatClientCache.get(modelName);
+    public String doChat(String message, String unityId, String modelName) {
+        ChatClient chatClient = createChatClient(modelName, unityId);
         log.info("选择的模型：{}", modelName);
         ChatResponse response = chatClient
                 .prompt()
                 .user(message)
-                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
                 .call()
                 .chatResponse();
         String content = null;
@@ -145,13 +147,12 @@ public class UnityApp {
     public record UnityReport(String title, List<String> suggestions) {
     }
 
-    public UnityReport doChatWithReport(String message, String chatId, String modelName) {
-        ChatClient chatClient = chatClientCache.get(modelName);
+    public UnityReport doChatWithReport(String message, String unityId, String modelName) {
+        ChatClient chatClient = createChatClient(modelName, unityId);
         UnityReport unityReport = chatClient
                 .prompt()
                 .system(SYSTEM_PROMPT + "每次对话要生成学习报告结果，标题为{用户名}的学习报告，内容为建议列表")
                 .user(message)
-                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
                 .call()
                 .entity(UnityReport.class);
         log.info("Unity report: {}", unityReport);
@@ -162,16 +163,15 @@ public class UnityApp {
      * UnityApp工具调用
      *
      * @param message
-     * @param chatId
+     * @param unityId
      * @param modelName
      * @return
      */
-    public String doChatWithTools(String message, String chatId, String modelName) {
-        ChatClient chatClient = chatClientCache.get(modelName);
+    public String doChatWithTools(String message, String unityId, String modelName) {
+        ChatClient chatClient = createChatClient(modelName, unityId);
         ChatResponse response = chatClient
                 .prompt()
                 .user(message)
-                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
                 //TODO  开启日志，观察效果
 //                .advisors(new MyLoggerAdvisor())
                 .toolCallbacks(toolCallbacks)
@@ -186,18 +186,16 @@ public class UnityApp {
      * Flus 流式输出
      *
      * @param message
-     * @param chatId
+     * @param unityId
      * @param modelName
      * @return
      */
-    public Flux<String> doChatByStream(String message, String chatId, String modelName) {
-        log.info("chatid: {}", chatId);
-        ChatClient chatClient = chatClientCache.get(modelName);
+    public Flux<String> doChatByStream(String message, String unityId, String modelName) {
+        log.info("unityid: {}", unityId);
+        ChatClient chatClient = createChatClient(modelName, unityId);
         return chatClient
                 .prompt()
                 .user(message)
-                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId)
-                        .param(ChatMemory.CONVERSATION_ID, chatId))
                 .stream()
                 .content();
     }

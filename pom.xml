@@ -197,18 +197,10 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!--        &lt;!&ndash; https://mvnrepository.com/artifact/ai.djl.huggingface/tokenizers &ndash;&gt;-->
-        <!--        <dependency>-->
-        <!--            <groupId>ai.djl.huggingface</groupId>-->
-        <!--            <artifactId>tokenizers</artifactId>-->
-        <!--            <version>0.35.0</version>-->
-        <!--        </dependency>-->
-        <!--        &lt;!&ndash; https://mvnrepository.com/artifact/ai.djl/api &ndash;&gt;-->
-        <!--        <dependency>-->
-        <!--            <groupId>ai.djl</groupId>-->
-        <!--            <artifactId>api</artifactId>-->
-        <!--            <version>0.35.0</version>-->
-        <!--        </dependency>-->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
 
         <!-- 很不想用，但不得不用-->
         <dependency>

@@ -4,14 +4,14 @@ import { PaperClipOutlined, SendOutlined } from '@ant-design/icons'
 import { marked } from 'marked'
 import 'github-markdown-css/github-markdown.css'
 import './style.css'
-import { createChatUnity } from '@/ui-backend/apis/unity'
+import { createChatUnity, getChatUnityHistory } from '@/ui-backend/apis/unity'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
 import { DeleteOutlined } from '@ant-design/icons'
 import { Conversations } from '@ant-design/x'
 import type { ConversationsProps } from '@ant-design/x'
 import { theme, type GetProp } from 'antd'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef as useReactRef } from 'react'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import { deleteChatUnity, getChatUnityList } from '@/ui-backend/apis/unity'
 
@@ -26,12 +26,27 @@ marked.setOptions({
 type Message = {
   role: 'user' | 'assistant'
   content: string
+  createTime?: string // 消息创建时间，用于分页
 }
 
 type Chat = {
   id: string
   title: string
   messages: Message[]
+  // 分页信息（基于时间戳）
+  hasMore: boolean
+  loadingHistory: boolean
+  lastCreateTime?: string // 最早一条消息的创建时间，用于加载更多
+}
+
+type HistoryRecord = {
+  id: string
+  message: string
+  messageType: 'user' | 'assistant'
+  unityId: string
+  createTime: string
+  updateTime: string
+  isDelete: number
 }
 
 const MODEL_OPTIONS = [
@@ -52,6 +67,178 @@ export const Unity = () => {
   const [streaming, setStreaming] = useState<boolean>(false)
   const eventSourceRef = useRef<EventSource | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0)
+  const chatScrollRef = useRef<HTMLDivElement | null>(null)
+
+  // 加载历史记录（首次加载或加载更多）
+  const getHistory = async (id: string, lastCreateTime?: string, append: boolean = false) => {
+    if (!id) return
+    try {
+      const currentChat = chats.find((c) => c.id === id)
+
+      // 如果正在加载，避免重复请求
+      if (currentChat?.loadingHistory) return
+
+      // 设置加载状态
+      setChats((prev) =>
+        prev.map((c) => {
+          if (c.id === id) {
+            return { ...c, loadingHistory: true }
+          }
+          return c
+        })
+      )
+
+      const res = await getChatUnityHistory(id, 10, lastCreateTime)
+      const historyData = res.data.data
+      console.log('获取对话历史', historyData)
+
+      // 将后端返回的历史记录转换为前端的 Message 格式
+      const newMessages: Message[] = (historyData.records || [])
+        .map((record: HistoryRecord) => ({
+          role: record.messageType === 'user' ? 'user' : 'assistant',
+          content: record.message || '',
+          createTime: record.createTime
+        }))
+        .reverse() // 反转数组，因为后端返回的是最新的在前，前端需要旧的在前
+
+      // 判断是否还有更多数据：如果返回的记录数等于 PageSize，可能还有更多
+      // 如果返回的记录数小于 PageSize，说明已经到底了
+      const pageSize = 10
+      const hasMore = (historyData.records || []).length >= pageSize
+
+      // 获取最早一条消息的创建时间，作为下次加载的 lastCreateTime
+      const earliestCreateTime = newMessages.length > 0 ? newMessages[0].createTime : undefined
+
+      // 更新 chats state
+      setChats((prev) => {
+        const existingChat = prev.find((c) => c.id === id)
+        if (existingChat) {
+          if (append) {
+            // 追加模式：将新消息添加到现有消息的前面（因为是更早的历史）
+            return prev.map((c) => {
+              if (c.id === id) {
+                return {
+                  ...c,
+                  messages: [...newMessages, ...c.messages],
+                  hasMore,
+                  lastCreateTime: earliestCreateTime,
+                  loadingHistory: false
+                }
+              }
+              return c
+            })
+          } else {
+            // 首次加载或重置：只有当本地消息为空时才设置历史记录
+            if (existingChat.messages.length === 0 || !existingChat.messages.some((m) => m.content)) {
+              return prev.map((c) => {
+                if (c.id === id) {
+                  return {
+                    ...c,
+                    messages: newMessages,
+                    hasMore,
+                    lastCreateTime: earliestCreateTime,
+                    loadingHistory: false
+                  }
+                }
+                return c
+              })
+            }
+            // 如果已有消息，只更新分页信息
+            return prev.map((c) => {
+              if (c.id === id) {
+                return { ...c, hasMore, lastCreateTime: earliestCreateTime, loadingHistory: false }
+              }
+              return c
+            })
+          }
+        } else {
+          // 如果会话不存在，创建新会话并添加历史记录
+          return [
+            ...prev,
+            {
+              id,
+              title: '对话',
+              messages: newMessages,
+              hasMore,
+              lastCreateTime: earliestCreateTime,
+              loadingHistory: false
+            }
+          ]
+        }
+      })
+    } catch (error) {
+      console.error('获取对话历史失败:', error)
+      // 清除加载状态
+      setChats((prev) =>
+        prev.map((c) => {
+          if (c.id === id) {
+            return { ...c, loadingHistory: false }
+          }
+          return c
+        })
+      )
+    }
+  }
+
+  // 使用 ref 来存储 chats，避免闭包问题
+  const chatsRef = useReactRef(chats)
+  useEffect(() => {
+    chatsRef.current = chats
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chats])
+
+  // 加载更多历史记录
+  const loadMoreHistory = useCallback(async () => {
+    if (!activeChatId) return
+    const currentChat = chatsRef.current.find((c) => c.id === activeChatId)
+    if (!currentChat || !currentChat.hasMore || currentChat.loadingHistory) return
+
+    // 保存当前滚动位置（从底部计算）
+    const scrollContainer = chatScrollRef.current
+    const previousScrollHeight = scrollContainer?.scrollHeight || 0
+
+    // 使用当前最早消息的创建时间作为 lastCreateTime
+    const lastCreateTime = currentChat.lastCreateTime
+    await getHistory(activeChatId, lastCreateTime, true)
+
+    // 加载完成后，恢复滚动位置
+    setTimeout(() => {
+      if (scrollContainer) {
+        const newScrollHeight = scrollContainer.scrollHeight
+        const scrollDiff = newScrollHeight - previousScrollHeight
+        scrollContainer.scrollTop = scrollContainer.scrollTop + scrollDiff
+      }
+    }, 100)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeChatId])
+
+  // 监听滚动事件，实现向上滚动加载更多
+  useEffect(() => {
+    const scrollContainer = chatScrollRef.current
+    if (!scrollContainer) return
+
+    let loading = false
+    const handleScroll = () => {
+      // 当滚动到顶部附近（距离顶部小于100px）时，加载更多
+      if (scrollContainer.scrollTop < 100 && !loading) {
+        loading = true
+        loadMoreHistory().finally(() => {
+          loading = false
+        })
+      }
+    }
+
+    scrollContainer.addEventListener('scroll', handleScroll)
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll)
+    }
+  }, [activeChatId, loadMoreHistory])
+  useEffect(() => {
+    if (activeChatId) {
+      getHistory(activeChatId, undefined, false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeChatId])
 
   // 监听路由参数变化，同步到 activeChatId
   useEffect(() => {
@@ -67,7 +254,16 @@ export const Unity = () => {
             // 如果本地没有该会话的消息，初始化一个空的会话数据结构
             setChats((prev) => {
               if (!prev.find((c) => c.id === id)) {
-                return [...prev, { id, title: '对话', messages: [] }]
+                return [
+                  ...prev,
+                  {
+                    id,
+                    title: '对话',
+                    messages: [],
+                    hasMore: false,
+                    loadingHistory: false
+                  }
+                ]
               }
               return prev
             })
@@ -148,7 +344,16 @@ export const Unity = () => {
       currentChatId = res.data.data.id // 修正：使用 res.data.data.id，与 handleNewChat 保持一致
       setActiveChatId(currentChatId)
       // 先添加到 chats 中
-      setChats((prev) => [...prev, { id: currentChatId, title: '新对话', messages: [] }])
+      setChats((prev) => [
+        ...prev,
+        {
+          id: currentChatId,
+          title: '新对话',
+          messages: [],
+          hasMore: false,
+          loadingHistory: false
+        }
+      ])
       setRefreshTrigger((prev) => prev + 1)
       // 跳转到新会话的 URL
       navigate(`/unityhelper/${currentChatId}`, { replace: true })
@@ -175,7 +380,9 @@ export const Unity = () => {
             messages: [
               { role: 'user' as const, content: messageInput },
               { role: 'assistant' as const, content: '' }
-            ]
+            ],
+            hasMore: false,
+            loadingHistory: false
           },
           ...next
         ]
@@ -313,7 +520,6 @@ export const Unity = () => {
 
   // 处理会话切换 - 使用 onActiveChange
   const handleActiveChange = (chatId: string) => {
-    console.log('切换到会话:', chatId)
     setActiveChatId(chatId)
     navigate(`/unityhelper/${chatId}`)
   }
@@ -352,40 +558,55 @@ export const Unity = () => {
 
       {/* 右侧聊天区 */}
       <div className="flex-1 min-w-0 flex flex-col min-h-0">
-        <div className="flex-1 min-h-0 overflow-auto p-6 space-y-4">
-          {(!activeChatId || !chats.find((c) => c.id === activeChatId)?.messages.length) && (
-            <div className="text-center text-gray-400 mt-24">今天有什么可以帮助到你？</div>
-          )}
-          {chats
-            .find((c) => c.id === activeChatId)
-            ?.messages.map((m, idx) => (
-              <div key={idx} className={m.role === 'user' ? 'text-right' : 'text-left'}>
-                <div
-                  className={
-                    'inline-block max-w-[80%] rounded-2xl px-4 py-2 ' +
-                    (m.role === 'user' ? 'bg-blue-100 text-black' : 'bg-white text-black')
-                  }>
-                  {m.role === 'assistant' && m.content ? (
+        <div ref={chatScrollRef} className="flex-1 min-h-0 overflow-auto p-6 space-y-4">
+          {(() => {
+            const currentChat = chats.find((c) => c.id === activeChatId)
+            const messages = currentChat?.messages || []
+            const hasMore = currentChat?.hasMore || false
+            const loadingHistory = currentChat?.loadingHistory || false
+
+            if (!activeChatId || messages.length === 0) {
+              return <div className="text-center text-gray-400 mt-24">今天有什么可以帮助到你？</div>
+            }
+
+            return (
+              <>
+                {hasMore && (
+                  <div className="text-center text-gray-400 py-4">
+                    {loadingHistory ? '加载历史记录中...' : <div className="text-xs text-gray-400">向上滚动加载更多历史</div>}
+                  </div>
+                )}
+                {messages.map((m, idx) => (
+                  <div key={idx} className={m.role === 'user' ? 'text-right' : 'text-left'}>
                     <div
-                      className="markdown-body"
-                      style={{
-                        fontSize: '14px',
-                        lineHeight: '1.6',
-                        color: '#24292f',
-                        backgroundColor: 'transparent'
-                      }}
-                      dangerouslySetInnerHTML={{
-                        __html: marked.parse(m.content) as string
-                      }}
-                    />
-                  ) : m.role === 'user' ? (
-                    <div className="whitespace-pre-wrap">{m.content}</div>
-                  ) : (
-                    <div>{streaming ? '思考中…' : ''}</div>
-                  )}
-                </div>
-              </div>
-            ))}
+                      className={
+                        'inline-block max-w-[80%] rounded-2xl px-4 py-2 ' +
+                        (m.role === 'user' ? 'bg-blue-100 text-black' : 'bg-white text-black')
+                      }>
+                      {m.role === 'assistant' && m.content ? (
+                        <div
+                          className="markdown-body"
+                          style={{
+                            fontSize: '14px',
+                            lineHeight: '1.6',
+                            color: '#24292f',
+                            backgroundColor: 'transparent'
+                          }}
+                          dangerouslySetInnerHTML={{
+                            __html: marked.parse(m.content) as string
+                          }}
+                        />
+                      ) : m.role === 'user' ? (
+                        <div className="whitespace-pre-wrap">{m.content}</div>
+                      ) : (
+                        <div>{streaming ? '思考中…' : ''}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </>
+            )
+          })()}
         </div>
 
         {/* 输入区，固定在底部 */}
@@ -456,7 +677,7 @@ export const Unity = () => {
           </div>
           {/* 调试信息 */}
           <div className="mt-2 flex items-center justify-end">
-            <div className="text-xs text-gray-400">后端 SSE 接口：/chat/sse | 当前会话：{activeChatId || '未创建'}</div>
+            <div className="text-xs text-gray-400">当前会话：{activeChatId || '未创建'}</div>
           </div>
         </div>
       </div>

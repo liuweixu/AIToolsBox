@@ -46,7 +46,7 @@ spring:
       username: root
       password:
       host: localhost
-      timeout: 5000
+      timeout: 3600
 
 logging:
   level:

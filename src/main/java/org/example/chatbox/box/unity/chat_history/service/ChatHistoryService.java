@@ -41,8 +41,8 @@ public interface ChatHistoryService extends IService<ChatHistory> {
      * @param lastCreateTime
      * @return
      */
-    Page<ChatHistory> listChatHistoryByUnityPage(Long unityId, int pageSize,
-                                                 LocalDateTime lastCreateTime);
+    Page<ChatHistory> listChatHistoryByUnityId(Long unityId, int pageSize,
+                                               LocalDateTime lastCreateTime);
 
     /**
      * 加载对话历史到内存

@@ -25,3 +25,18 @@ export function getChatUnityList() {
         method: "GET"
     })
 }
+
+// 4. 获取Unity对话历史
+export function getChatUnityHistory(id: string, pageSize: number = 10, lastCreateTime?: string) {
+    const params: Record<string, string | number> = {
+        PageSize: pageSize
+    }
+    if (lastCreateTime) {
+        params.lastCreateTime = lastCreateTime
+    }
+    return request({
+        url: `/api/unity/history/${id}`,
+        method: "GET",
+        params
+    })
+}

@@ -1,9 +1,12 @@
 package org.example.chatbox.config;
 
 import com.alibaba.cloud.ai.memory.redis.RedissonRedisChatMemoryRepository;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.lang.reflect.Field;
 
 @Configuration
 public class MemoryConfig {
@@ -17,12 +20,13 @@ public class MemoryConfig {
 
     @Bean
     public RedissonRedisChatMemoryRepository chatMemoryRepository() {
-        return RedissonRedisChatMemoryRepository.builder()
+
+        return RedissonRedisChatMemoryRepository
+                .builder()
                 .host(redisHost)
                 .port(redisPort)
                 .timeout(redisTimeout)
                 .build();
     }
 
-    ;
 }
