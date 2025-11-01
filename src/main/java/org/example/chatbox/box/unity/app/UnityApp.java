@@ -1,5 +1,6 @@
 package org.example.chatbox.box.unity.app;
 
+import com.alibaba.cloud.ai.memory.redis.RedissonRedisChatMemoryRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +31,7 @@ public class UnityApp {
     private final Map<String, ChatClient> chatClientCache = new ConcurrentHashMap<>();
 
     @Resource
-    private ChatMemoryRepository chatMemoryRepository;
+    private RedissonRedisChatMemoryRepository redisChatMemoryRepository;
 
     // 导入工厂
     @Resource
@@ -82,7 +83,7 @@ public class UnityApp {
         log.info("ChatModel for AIPlatform: {}", chatModel);
         // 基于Redis的对话记忆
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
-                .chatMemoryRepository(chatMemoryRepository)
+                .chatMemoryRepository(redisChatMemoryRepository)
                 .maxMessages(20)
                 .build();
 

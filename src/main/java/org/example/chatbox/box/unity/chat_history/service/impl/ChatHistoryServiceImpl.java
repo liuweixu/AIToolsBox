@@ -3,6 +3,7 @@ package org.example.chatbox.box.unity.chat_history.service.impl;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.example.chatbox.box.unity.chat_history.entity.ChatHistory;
 import org.example.chatbox.box.unity.chat_history.entity.ChatHistoryQueryRequest;
 import org.example.chatbox.box.unity.chat_history.mapper.ChatHistoryMapper;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
  * @author <a href="https://github.com/liuweixu">liuweixu</a>
  */
 @Service
+@Slf4j
 public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatHistory> implements ChatHistoryService {
     /**
      * 新增对话历史
@@ -63,6 +65,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
 
     /**
      * 分页查询某一个对话框的对话记录
+     * 游标查询服务
      *
      * @param unityId
      * @param pageSize
@@ -97,6 +100,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
 
     /**
      * 构造查询条件
+     * 实现游标分页查询
      *
      * @param chatHistoryQueryRequest
      * @return
@@ -114,11 +118,15 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         LocalDateTime lastCreateTime = chatHistoryQueryRequest.getLastCreateTime();
         // 拼接查询条件
         queryWrapper.eq("id", id)
-                .eq("message", message)
+                .like("message", message)
                 .eq("unity_id", unityId)
-                .eq("message_type", messageType)
-                .eq("last_create_time", lastCreateTime);
-
-        return null;
+                .eq("message_type", messageType);
+        // 游标分页查询逻辑-只用createTime作为游标
+        if (lastCreateTime != null) {
+            queryWrapper.lt("create_time", lastCreateTime);
+        }
+        // 按照时间降序排列
+        queryWrapper.orderBy("create_time", false);
+        return queryWrapper;
     }
 }
