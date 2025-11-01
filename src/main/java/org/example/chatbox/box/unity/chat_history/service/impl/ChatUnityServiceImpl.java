@@ -37,7 +37,7 @@ public class ChatUnityServiceImpl extends ServiceImpl<ChatUnityMapper, ChatUnity
         ChatUnity chatUnity = new ChatUnity();
         //TODO 想要实现大模型实时预测，但是思路我没想出来，也许要异步？
 //        String response = unityApp.summaryResponse(message);
-        String response = message.substring(0, 20);
+        String response = message.length() > 20 ? message.substring(0, 20) : message;
         chatUnity.setSummary(response);
         chatUnity.setIsSummary(1);
         this.save(chatUnity);

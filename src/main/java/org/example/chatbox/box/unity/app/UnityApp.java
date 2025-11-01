@@ -125,8 +125,7 @@ public class UnityApp {
         ChatResponse response = chatClient
                 .prompt()
                 .user(message)
-                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId)
-                        .param(ChatMemory.CONVERSATION_ID, 10))
+                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
                 .call()
                 .chatResponse();
         String content = null;
@@ -152,8 +151,7 @@ public class UnityApp {
                 .prompt()
                 .system(SYSTEM_PROMPT + "每次对话要生成学习报告结果，标题为{用户名}的学习报告，内容为建议列表")
                 .user(message)
-                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId)
-                        .param(ChatMemory.CONVERSATION_ID, 10))
+                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
                 .call()
                 .entity(UnityReport.class);
         log.info("Unity report: {}", unityReport);
@@ -173,8 +171,7 @@ public class UnityApp {
         ChatResponse response = chatClient
                 .prompt()
                 .user(message)
-                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId)
-                        .param(ChatMemory.CONVERSATION_ID, 10))
+                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
                 //TODO  开启日志，观察效果
 //                .advisors(new MyLoggerAdvisor())
                 .toolCallbacks(toolCallbacks)
@@ -194,12 +191,13 @@ public class UnityApp {
      * @return
      */
     public Flux<String> doChatByStream(String message, String chatId, String modelName) {
+        log.info("chatid: {}", chatId);
         ChatClient chatClient = chatClientCache.get(modelName);
         return chatClient
                 .prompt()
                 .user(message)
                 .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId)
-                        .param(ChatMemory.CONVERSATION_ID, 10))
+                        .param(ChatMemory.CONVERSATION_ID, chatId))
                 .stream()
                 .content();
     }
