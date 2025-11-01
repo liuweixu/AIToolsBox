@@ -66,4 +66,10 @@ public class ChatUnity implements Serializable {
      */
     private String summary;
 
+    /**
+     * 是否总结
+     */
+    @Column("isSummary")
+    private Integer isSummary;
+
 }

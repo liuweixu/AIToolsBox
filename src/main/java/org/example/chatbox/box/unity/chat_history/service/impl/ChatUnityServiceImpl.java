@@ -2,6 +2,7 @@ package org.example.chatbox.box.unity.chat_history.service.impl;
 
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.example.chatbox.box.unity.chat_history.entity.ChatUnity;
 import org.example.chatbox.box.unity.chat_history.mapper.ChatUnityMapper;
 import org.example.chatbox.box.unity.chat_history.service.ChatHistoryService;
@@ -16,8 +17,8 @@ import java.util.List;
  * @author <a href="https://github.com/liuweixu">liuweixu</a>
  */
 @Service
+@Slf4j
 public class ChatUnityServiceImpl extends ServiceImpl<ChatUnityMapper, ChatUnity> implements ChatUnityService {
-
 
     @Resource
     private ChatHistoryService chatHistoryService;
@@ -46,11 +47,11 @@ public class ChatUnityServiceImpl extends ServiceImpl<ChatUnityMapper, ChatUnity
             return false;
         }
         // 先删除相关的对话历史信息
-//        try {
-//            chatHistoryService.deleteChatHistoryByUnityId(id);
-//        } catch (Exception e) {
-//            log.error("删除关联对话历史信息失败：{}", e.getMessage());
-//        }
+        try {
+            chatHistoryService.deleteChatHistoryByUnityId(id);
+        } catch (Exception e) {
+            log.error("删除关联对话历史信息失败：{}", e.getMessage());
+        }
         // 删除应用
         return super.removeById(id);
     }
@@ -63,5 +64,10 @@ public class ChatUnityServiceImpl extends ServiceImpl<ChatUnityMapper, ChatUnity
     @Override
     public List<ChatUnity> getChatUnityList() {
         return this.getMapper().selectAll();
+    }
+
+    @Override
+    public boolean updateChatUnitySummary(String message) {
+        return false;
     }
 }

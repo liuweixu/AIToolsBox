@@ -9,14 +9,17 @@ import org.example.chatbox.box.unity.chat_model.ChatModelFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.deepseek.DeepSeekChatModel;
+import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -198,6 +201,26 @@ public class UnityApp {
                         .param(ChatMemory.CONVERSATION_ID, 10))
                 .stream()
                 .content();
+    }
+
+    /**
+     * 对用户输入的语句生成10字以内的摘要
+     *
+     * @param message   用户输入内容
+     * @param modelName 模型选择
+     * @return
+     */
+
+    @Resource
+    private DeepSeekChatModel deepSeekChatModel;
+
+    public String summaryResponse(String message) {
+        String summaryPrompt = "不需要任何回答，只需要对`{message}`总结一句话，需要有一定特性介绍，比如XX介绍、讲解XX、XX的总结、实现XX的方案等，控制10字以内。";
+        Map<String, Object> map = new HashMap<>();
+        map.put("message", message);
+        PromptTemplate promptTemplate = new PromptTemplate(summaryPrompt);
+        String prompt = promptTemplate.render(map);
+        return deepSeekChatModel.call(prompt);
     }
 }
 

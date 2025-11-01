@@ -70,9 +70,12 @@ export const Unity = () => {
 
   // 当 activeChatId 改变时，同步更新 URL
   useEffect(() => {
+    // 只有当 activeChatId 和 id 不一致时才更新 URL，避免循环更新
     if (activeChatId && activeChatId !== id) {
       navigate(`/unityhelper/${activeChatId}`, { replace: true })
-    } else if (!activeChatId && id) {
+    } else if (!activeChatId && id && id !== '') {
+      // 只有当 id 存在但 activeChatId 为空时才跳转，避免删除时的循环
+      // 添加 id !== '' 检查，确保不会在已经导航到 /unityhelper 时再次导航
       navigate('/unityhelper', { replace: true })
     }
   }, [activeChatId, id, navigate])
@@ -256,14 +259,28 @@ export const Unity = () => {
     ],
     onClick: (menuInfo) => {
       menuInfo.domEvent.stopPropagation()
-      deleteChatUnity(conversation.key)
+      const deletedChatId = conversation.key
+      const isActiveChat = deletedChatId === activeChatId
+
+      // 如果删除的是当前激活的会话，先清空 activeChatId（会触发 useEffect 自动导航）
+      if (isActiveChat) {
+        setActiveChatId('')
+        // 同时从本地 chats 中删除
+        setChats((prev) => prev.filter((c) => c.id !== deletedChatId))
+      }
+
+      // 更新列表（先更新，避免列表显示延迟）
+      setChatList((prev) => prev.filter((c) => c.key !== deletedChatId))
+
+      deleteChatUnity(deletedChatId)
         .then(() => {
-          // 调用删除回调，让父组件同步更新状态
-          setChatList((prev) => prev.filter((c) => c.key !== conversation.key))
+          // 重新获取列表以同步最新状态
           return getChatList()
         })
         .catch((err) => {
           console.log(err)
+          // 如果删除失败，恢复列表
+          getChatList()
         })
     }
   })

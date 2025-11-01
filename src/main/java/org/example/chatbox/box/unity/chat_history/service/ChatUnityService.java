@@ -33,4 +33,7 @@ public interface ChatUnityService extends IService<ChatUnity> {
      * @return
      */
     public List<ChatUnity> getChatUnityList();
+
+
+    public boolean updateChatUnitySummary(String message);
 }

@@ -3,7 +3,6 @@ package org.example.chatbox.box.unity.chat_history.service.impl;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
-import lombok.extern.slf4j.Slf4j;
 import org.example.chatbox.box.unity.chat_history.entity.ChatHistory;
 import org.example.chatbox.box.unity.chat_history.entity.ChatHistoryQueryRequest;
 import org.example.chatbox.box.unity.chat_history.mapper.ChatHistoryMapper;
@@ -22,7 +21,6 @@ import java.time.LocalDateTime;
  * @author <a href="https://github.com/liuweixu">liuweixu</a>
  */
 @Service
-@Slf4j
 public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatHistory> implements ChatHistoryService {
     /**
      * 新增对话历史
@@ -58,7 +56,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         ThrowUtils.throwIf(unityId == null || unityId <= 0, ErrorCode.PARAMS_ERROR,
                 "对话框ID不能为空");
         QueryWrapper queryWrapper = QueryWrapper.create()
-                .eq("unity_id", unityId);
+                .eq("unityId", unityId);
         return this.remove(queryWrapper);
     }
 
@@ -119,14 +117,14 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         // 拼接查询条件
         queryWrapper.eq("id", id)
                 .like("message", message)
-                .eq("unity_id", unityId)
-                .eq("message_type", messageType);
+                .eq("unityId", unityId)
+                .eq("messageType", messageType);
         // 游标分页查询逻辑-只用createTime作为游标
         if (lastCreateTime != null) {
-            queryWrapper.lt("create_time", lastCreateTime);
+            queryWrapper.lt("createTime", lastCreateTime);
         }
         // 按照时间降序排列
-        queryWrapper.orderBy("create_time", false);
+        queryWrapper.orderBy("createTime", false);
         return queryWrapper;
     }
 }
