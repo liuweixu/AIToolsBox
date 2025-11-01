@@ -6,6 +6,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.chatbox.box.unity.advisor.MyLoggerAdvisor;
 import org.example.chatbox.box.unity.chat_model.ChatModelFactory;
+import org.example.chatbox.box.unity.enums.ChatModelEnum;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -206,21 +207,29 @@ public class UnityApp {
     /**
      * 对用户输入的语句生成10字以内的摘要
      *
-     * @param message   用户输入内容
-     * @param modelName 模型选择
+     * @param message 用户输入内容
      * @return
      */
 
-    @Resource
-    private DeepSeekChatModel deepSeekChatModel;
 
     public String summaryResponse(String message) {
-        String summaryPrompt = "不需要任何回答，只需要对`{message}`总结一句话，需要有一定特性介绍，比如XX介绍、讲解XX、XX的总结、实现XX的方案等，控制10字以内。";
-        Map<String, Object> map = new HashMap<>();
-        map.put("message", message);
-        PromptTemplate promptTemplate = new PromptTemplate(summaryPrompt);
-        String prompt = promptTemplate.render(map);
-        return deepSeekChatModel.call(prompt);
+
+        if (message.length() <= 10) {
+            return message;
+        } else {
+            String modelName = ChatModelEnum.DASHSCOPE.name();
+            ChatModel chatModel = this.chatModelFactory.getChatModel(modelName);
+            String summaryPrompt = """
+                    不需要任何回答，只需要对`{message}`总结一句话。
+                    需要有一定特性介绍，比如XX介绍、讲解XX、XX的总结、实现XX的方案等，控制10字以内。
+                    如果{message}长度低于10个字，无需总结，直接返回{message}即可
+                    """;
+            Map<String, Object> map = new HashMap<>();
+            map.put("message", message);
+            PromptTemplate promptTemplate = new PromptTemplate(summaryPrompt);
+            String prompt = promptTemplate.render(map);
+            return chatModel.call(prompt);
+        }
     }
 }
 

@@ -3,6 +3,7 @@ package org.example.chatbox.box.unity.chat_history.service.impl;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.example.chatbox.box.unity.app.UnityApp;
 import org.example.chatbox.box.unity.chat_history.entity.ChatUnity;
 import org.example.chatbox.box.unity.chat_history.mapper.ChatUnityMapper;
 import org.example.chatbox.box.unity.chat_history.service.ChatHistoryService;
@@ -23,14 +24,22 @@ public class ChatUnityServiceImpl extends ServiceImpl<ChatUnityMapper, ChatUnity
     @Resource
     private ChatHistoryService chatHistoryService;
 
+    @Resource
+    private UnityApp unityApp;
+
     /**
      * 创建对话框
      *
      * @return
      */
     @Override
-    public ChatUnity addChatUnity() {
+    public ChatUnity addChatUnity(String message) {
         ChatUnity chatUnity = new ChatUnity();
+        //TODO 想要实现大模型实时预测，但是思路我没想出来，也许要异步？
+//        String response = unityApp.summaryResponse(message);
+        String response = message.substring(0, 20);
+        chatUnity.setSummary(response);
+        chatUnity.setIsSummary(1);
         this.save(chatUnity);
         return this.getById(chatUnity.getId());
     }
@@ -66,8 +75,5 @@ public class ChatUnityServiceImpl extends ServiceImpl<ChatUnityMapper, ChatUnity
         return this.getMapper().selectAll();
     }
 
-    @Override
-    public boolean updateChatUnitySummary(String message) {
-        return false;
-    }
+
 }

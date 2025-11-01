@@ -17,7 +17,7 @@ public interface ChatUnityService extends IService<ChatUnity> {
      *
      * @return
      */
-    public ChatUnity addChatUnity();
+    public ChatUnity addChatUnity(String message);
 
     /**
      * 删除对话框
@@ -34,6 +34,4 @@ public interface ChatUnityService extends IService<ChatUnity> {
      */
     public List<ChatUnity> getChatUnityList();
 
-
-    public boolean updateChatUnitySummary(String message);
 }

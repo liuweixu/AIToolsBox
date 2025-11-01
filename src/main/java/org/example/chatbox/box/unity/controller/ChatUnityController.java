@@ -1,6 +1,7 @@
 package org.example.chatbox.box.unity.controller;
 
 import jakarta.annotation.Resource;
+import org.example.chatbox.box.unity.chat_history.entity.ChatMessage;
 import org.example.chatbox.box.unity.chat_history.entity.ChatRequest;
 import org.example.chatbox.box.unity.chat_history.entity.ChatUnity;
 import org.example.chatbox.box.unity.chat_history.service.ChatUnityService;
@@ -27,9 +28,9 @@ public class ChatUnityController {
     @Resource
     private ChatUnityService chatUnityService;
 
-    @GetMapping("/create")
-    public BaseResponse<ChatUnity> addChatApp() {
-        return ResultUtils.success(chatUnityService.addChatUnity());
+    @PostMapping("/create")
+    public BaseResponse<ChatUnity> addChatApp(@RequestBody ChatMessage chatMessage) {
+        return ResultUtils.success(chatUnityService.addChatUnity(chatMessage.getMessage()));
     }
 
     @PostMapping("/delete")

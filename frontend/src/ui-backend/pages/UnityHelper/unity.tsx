@@ -5,7 +5,7 @@ import { marked } from 'marked'
 import 'github-markdown-css/github-markdown.css'
 import './style.css'
 import { createChatUnity } from '@/ui-backend/apis/unity'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
 import { DeleteOutlined } from '@ant-design/icons'
 import { Conversations } from '@ant-design/x'
@@ -44,6 +44,7 @@ const MODEL_OPTIONS = [
 export const Unity = () => {
   const { id } = useParams<{ id?: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const [chats, setChats] = useState<Chat[]>([])
   const [activeChatId, setActiveChatId] = useState<string>(id || '')
   const [modelName, setModelName] = useState<string>(MODEL_OPTIONS[0].value)
@@ -55,18 +56,38 @@ export const Unity = () => {
   // 监听路由参数变化，同步到 activeChatId
   useEffect(() => {
     if (id) {
-      setActiveChatId(id)
-      // 如果本地没有该会话的消息，初始化一个空的会话数据结构
-      setChats((prev) => {
-        if (!prev.find((c) => c.id === id)) {
-          return [...prev, { id, title: '对话', messages: [] }]
-        }
-        return prev
-      })
+      // 验证会话是否存在
+      getChatUnityList()
+        .then((res) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const chatIds = res.data.data.map((item: any) => item.id)
+          if (chatIds.includes(id)) {
+            // 会话存在，设置 activeChatId
+            setActiveChatId(id)
+            // 如果本地没有该会话的消息，初始化一个空的会话数据结构
+            setChats((prev) => {
+              if (!prev.find((c) => c.id === id)) {
+                return [...prev, { id, title: '对话', messages: [] }]
+              }
+              return prev
+            })
+          } else {
+            // 会话不存在，重定向到 /unityhelper
+            console.warn(`会话 ${id} 不存在，重定向到 /unityhelper`)
+            navigate('/unityhelper', { replace: true })
+            setActiveChatId('')
+          }
+        })
+        .catch((err) => {
+          console.error('获取会话列表失败:', err)
+          // 出错时也重定向到 /unityhelper
+          navigate('/unityhelper', { replace: true })
+          setActiveChatId('')
+        })
     } else {
       setActiveChatId('')
     }
-  }, [id])
+  }, [id, navigate])
 
   // 当 activeChatId 改变时，同步更新 URL
   useEffect(() => {
@@ -94,13 +115,18 @@ export const Unity = () => {
    * 创建对话框
    */
   const handleNewChat = async () => {
-    const res = await createChatUnity()
-    const newId = res.data.data.id
-    setActiveChatId(newId)
-    setChats((prev) => [...prev, { id: newId, title: '新对话', messages: [] }])
-    setRefreshTrigger((prev) => prev + 1)
-    // 跳转到新会话的 URL
-    navigate(`/unityhelper/${newId}`)
+    // 清空当前激活的会话
+    setActiveChatId('')
+    // 清空输入框
+    setInput('')
+    // 如果当前不在 /unityhelper，则跳转；如果已经在 /unityhelper，强制刷新状态
+    if (location.pathname !== '/unityhelper') {
+      navigate('/unityhelper', { replace: true })
+    } else {
+      // 如果已经在 /unityhelper，强制重置状态（通过设置一个临时值再清空来触发更新）
+      setActiveChatId('')
+      setInput('')
+    }
   }
 
   const stopStream = () => {
@@ -114,19 +140,19 @@ export const Unity = () => {
   const handleSend = async () => {
     if (!input.trim()) return
     let currentChatId = activeChatId
-    // 如果没有会话则自动新建一个，并等待完成
+    const messageInput = input
+
+    // 如果没有会话则自动新建一个，并等待完成，同时传入第一个消息
     if (!currentChatId) {
-      const res = await createChatUnity()
-      currentChatId = res.data.id
+      const res = await createChatUnity(messageInput)
+      currentChatId = res.data.data.id // 修正：使用 res.data.data.id，与 handleNewChat 保持一致
       setActiveChatId(currentChatId)
       // 先添加到 chats 中
       setChats((prev) => [...prev, { id: currentChatId, title: '新对话', messages: [] }])
       setRefreshTrigger((prev) => prev + 1)
       // 跳转到新会话的 URL
-      navigate(`/unityhelper/${currentChatId}`)
+      navigate(`/unityhelper/${currentChatId}`, { replace: true })
     }
-
-    const messageInput = input
 
     // 先落地用户消息到指定会话
     setChats((prev) => {
@@ -230,7 +256,7 @@ export const Unity = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = res.data.data.map((item: any) => ({
       key: item.id,
-      label: `对话${item.summary}`,
+      label: `${item.summary}`,
       disabled: false
     }))
     setChatList(data)

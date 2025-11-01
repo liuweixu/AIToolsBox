@@ -1,10 +1,11 @@
 import { request } from "@/ui-backend/utils";
 
 // 1. 在Unity助手创建对话框
-export function createChatUnity(){
+export function createChatUnity(message: string){
     return request({
         url: "/api/unity/chat/create",
-        method: "GET"
+        method: "POST",
+        data:  { message: message }
     })
 }
 
