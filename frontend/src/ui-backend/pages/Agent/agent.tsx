@@ -670,14 +670,14 @@ export const AgentHelper = () => {
     <div className="flex h-[calc(100vh-96px)] min-h-0 bg-white">
       {/* 左侧会话与操作栏（保留会话，可删除） */}
       <div className="w-72 border-r border-gray-200 p-4 flex flex-col gap-3 min-h-0">
-        <div className="text-lg font-semibold flex-shrink-0">AI 智能体</div>
+        <div className="text-lg font-semibold flex-shrink-0">AI 超级智能体</div>
         <Button
           size="large"
           onClick={handleNewChat}
           className="w-full !bg-white !text-gray-900 !border-0 !rounded-full !shadow-sm hover:!bg-gray-50 !h-auto !py-3 !px-6 !flex !items-center !justify-center !gap-2 flex-shrink-0">
           开启新智能体
         </Button>
-        <div className="text-xs text-gray-500 flex-shrink-0"> 共计 {chatList.length} 条对话</div>
+        <div className="text-xs text-gray-500 flex-shrink-0"> 共计 {chatList.length} 个智能体</div>
         <div className="flex-1 min-h-0">
           <div id="scrollableDiv" style={{ height: '100%', overflow: 'auto' }}>
             <InfiniteScroll

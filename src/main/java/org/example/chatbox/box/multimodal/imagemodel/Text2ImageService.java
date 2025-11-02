@@ -6,23 +6,22 @@ import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesisResult;
 import com.alibaba.dashscope.exception.ApiException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
-public class TextToImage {
+public class Text2ImageService {
 
-    @Value("${alibaba.image.model.api_key}")
+    @Value("${alibaba.api_key}")
     private String apiKey;
-    @Value("${alibaba.image.model.base_url}")
+    @Value("${alibaba.base_url}")
     private String baseImageUrl;
-    @Value("${alibaba.image.model.model_name}")
+    @Value("${alibaba.image.model_name}")
     private String modelName;
 
-    public String getImageUrl(String prompt, String size, String number) {
+    public String getImageUrl(String prompt, String size, int number) {
         // 设置parameters参数
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("prompt_extend", true);
@@ -35,7 +34,7 @@ public class TextToImage {
                         .apiKey(apiKey)
                         .model(modelName)
                         .prompt(prompt)
-                        .n(Integer.valueOf(number))
+                        .n(number)
                         .size(size)
                         .negativePrompt("")
                         .parameters(parameters)
@@ -49,6 +48,6 @@ public class TextToImage {
         } catch (ApiException | NoApiKeyException e) {
             throw new RuntimeException(e.getMessage());
         }
-        return result.getOutput().getResults().getFirst().getOrDefault("url", "");
+        return result.getOutput().getResults().getFirst().getOrDefault("url", null);
     }
 }

@@ -16,6 +16,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -47,6 +48,9 @@ public class UnityApp {
     // 百炼知识库RAG
     @Resource
     private Advisor unityRagBaiLianAdvisor;
+
+    @Resource
+    private ToolCallbackProvider toolCallbackProvider;
 
     /**
      * 系统提示词
@@ -221,6 +225,7 @@ public class UnityApp {
                 .user(message)
                 .advisors(unityRagBaiLianAdvisor) // 引入百炼知识库rag
                 .toolCallbacks(toolCallbacks)
+                .toolCallbacks(toolCallbackProvider)
                 .stream()
                 .content();
     }

@@ -34,7 +34,7 @@ build/
 
 ### VS Code ###
 .vscode/
-/src/main/resources/application_dev.yml
+/src/main/resources/application-dev.yml
 /src/main/java/org/example/chatbox/box/unity/test/
 /src/main/resources/prompt/
 /src/test/java/org/example/chatreact/UnityAppTest.java
@@ -47,3 +47,4 @@ build/
 /src/main/java/org/example/chatbox/box/unity/test/
 /src/test/java/org/example/chatbox/test/
 /src/test/java/org/example/chatbox/imagetest/
+/src/main/resources/application-dev.yml

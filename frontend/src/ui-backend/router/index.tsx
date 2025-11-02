@@ -8,8 +8,8 @@ const Layout = lazy(() => import('@/ui-backend/pages/Layout'))
 const Home = lazy(() => import('@/ui-backend/pages/Home'))
 const Agent = lazy(() => import('@/ui-backend/pages/Agent'))
 const UnityHelper = lazy(() => import('@/ui-backend/pages/UnityHelper'))
-const Generator = lazy(() => import('@/ui-backend/pages/Generator'))
-const Logging = lazy(() => import('@/ui-backend/pages/Logging'))
+const Text2Image = lazy(() => import('@/ui-backend/pages/Text2Image'))
+const Text2Video = lazy(() => import('@/ui-backend/pages/Text2Video'))
 
 export const Router = () => {
   return (
@@ -62,18 +62,18 @@ export const Router = () => {
           }
         />
         <Route
-          path="generator"
+          path="text2image"
           element={
             <Suspense fallback={'加载中'}>
-              <Generator />
+              <Text2Image />
             </Suspense>
           }
         />
         <Route
-          path="logging"
+          path="text2video"
           element={
             <Suspense fallback={'加载中'}>
-              <Logging />
+              <Text2Video />
             </Suspense>
           }
         />

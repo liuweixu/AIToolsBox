@@ -1,5 +1,5 @@
 import React from 'react'
-import { UserOutlined, VideoCameraOutlined, AndroidOutlined, HighlightOutlined, DashboardOutlined } from '@ant-design/icons'
+import { UserOutlined, AndroidOutlined, HighlightOutlined, CodeSandboxOutlined, VideoCameraOutlined } from '@ant-design/icons'
 import { Layout, Menu, theme } from 'antd'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
@@ -33,7 +33,7 @@ const App: React.FC = () => {
             },
             {
               key: '/unityhelper',
-              icon: <VideoCameraOutlined />,
+              icon: <CodeSandboxOutlined />,
               label: 'Unity学习助手',
               onClick: () => navigate('/unityhelper')
             },
@@ -44,16 +44,16 @@ const App: React.FC = () => {
               onClick: () => navigate('/agent')
             },
             {
-              key: '/generator',
+              key: '/text2image',
               icon: <HighlightOutlined />,
-              label: '文生图/视频',
-              onClick: () => navigate('/generator')
+              label: '文字生图',
+              onClick: () => navigate('/text2image')
             },
             {
-              key: '/logging',
-              icon: <DashboardOutlined />,
-              label: '日志记录',
-              onClick: () => navigate('/logging')
+              key: '/text2video',
+              icon: <VideoCameraOutlined />,
+              label: '文字生成视频',
+              onClick: () => navigate('/text2video')
             }
           ]}
         />

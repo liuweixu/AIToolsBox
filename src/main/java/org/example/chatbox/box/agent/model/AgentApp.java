@@ -11,6 +11,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -31,6 +32,10 @@ public class AgentApp {
      */
     @Resource
     private RedissonRedisChatMemoryRepository redisChatMemoryRepository;
+
+    @Resource
+    private ToolCallbackProvider toolCallbackProvider;
+
 
     public AgentApp(ChatModelFactory chatModelFactory) {
         this.chatModelFactory = chatModelFactory;

@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: dev
   application:
     name: ChatUnity
   datasource:
@@ -9,21 +11,21 @@ spring:
 
   ai:
     dashscope:
-      api-key: sk-2bad25356fc546fa85f792652b34af8e
+      api-key: ${YOUR_API_KEY}
       # 引入阿里千问
       chat:
         options:
           model: qwen-plus-2025-07-28
     # 引入deepseek
     deepseek:
-      api-key: sk-72b6f63b5099437d94ca8b5cd370b8c8
+      api-key: ${YOUR_API_KEY}
       chat:
         options:
           model: deepseek-chat
 
     # 引入智谱AI
     zhipuai:
-      api-key: 0e3fa20e31f94e388a6ed827834038f5.fn86ydXOj9teSq20
+      api-key: ${YOUR_API_KEY}
       chat:
         options:
           model: glm-4.5v
@@ -36,6 +38,11 @@ spring:
       embedding:
         options:
           model: qwen3-embedding:latest
+    # 使用mcp
+    mcp:
+      client:
+        stdio:
+          servers-configuration: classpath:mcp-servers.json
 
 
   # Redis设置
@@ -52,10 +59,14 @@ logging:
   level:
     org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor: debug
 
-# 引入阿里万相自定义
+# 引入阿里巴巴通义千问/万相自定义
 alibaba:
+  base_url: https://dashscope.aliyuncs.com/api/v1
+  api_key: ${YOUR_API_KEY}
   image:
-    model:
-      base_url: https://dashscope.aliyuncs.com/api/v1
-      api_key: sk-2bad25356fc546fa85f792652b34af8e
-      model_name: wan2.5-t2i-preview
+    model_name: wan2.5-t2i-preview
+  video:
+    model_name: wan2.5-t2v-preview
+
+search-api:
+  api-key: ${YOUR_API_KEY}

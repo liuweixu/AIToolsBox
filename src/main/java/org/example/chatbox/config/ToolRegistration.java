@@ -1,8 +1,10 @@
 package org.example.chatbox.config;
 
+import jakarta.annotation.Resource;
 import org.example.chatbox.tools.*;
 import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,9 +24,11 @@ public class ToolRegistration {
         ResourceDownloadTool resourceDownloadTool = new ResourceDownloadTool();
         PDFGenerationTool pdfGenerationTool = new PDFGenerationTool();
         TerminateTool terminateTool = new TerminateTool();
+        WebSearchTool webSearchTool = new WebSearchTool();
 
         // TODO 涉及到适配器模式的应用
         return ToolCallbacks.from(
+                webSearchTool,
                 fileOperationTool,
                 webScrapperTool,
                 terminalOperationTool,
