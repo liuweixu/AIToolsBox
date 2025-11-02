@@ -15,6 +15,7 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.rag.preretrieval.query.expansion.MultiQueryExpander;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,6 +90,7 @@ public class UnityApp {
         this.chatModelFactory = chatModelFactory;
     }
 
+
     /**
      * 会话记忆引入Redis
      *
@@ -98,6 +100,7 @@ public class UnityApp {
     private ChatClient createChatClient(String chatModelName, String unityId) {
         ChatModel chatModel = this.chatModelFactory.getChatModel(chatModelName);
         log.info("ChatModel for AIPlatform: {}", chatModel);
+
         // 基于Redis的对话记忆
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
                 .chatMemoryRepository(redisChatMemoryRepository)

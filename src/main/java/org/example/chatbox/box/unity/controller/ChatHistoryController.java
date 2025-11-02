@@ -1,10 +1,12 @@
 package org.example.chatbox.box.unity.controller;
 
 import com.mybatisflex.core.paginate.Page;
+import jakarta.annotation.Resource;
 import org.example.chatbox.box.unity.chat_history.entity.ChatHistory;
 import org.example.chatbox.box.unity.chat_history.service.ChatHistoryService;
 import org.example.chatbox.common.BaseResponse;
 import org.example.chatbox.common.ResultUtils;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
