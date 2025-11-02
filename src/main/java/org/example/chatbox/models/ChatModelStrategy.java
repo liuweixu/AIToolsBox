@@ -1,4 +1,4 @@
-package org.example.chatbox.box.unity.chat_model.models;
+package org.example.chatbox.models;
 
 import org.springframework.ai.chat.model.ChatModel;
 

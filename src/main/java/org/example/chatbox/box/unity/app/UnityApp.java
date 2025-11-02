@@ -1,22 +1,20 @@
 package org.example.chatbox.box.unity.app;
 
 import com.alibaba.cloud.ai.memory.redis.RedissonRedisChatMemoryRepository;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.chatbox.box.unity.advisor.MyLoggerAdvisor;
 import org.example.chatbox.box.unity.chat_history.service.ChatHistoryService;
-import org.example.chatbox.box.unity.chat_model.ChatModelFactory;
+import org.example.chatbox.models.ChatModelFactory;
 import org.example.chatbox.box.unity.enums.ChatModelEnum;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.PromptTemplate;
-import org.springframework.ai.deepseek.DeepSeekChatModel;
-import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -45,6 +43,10 @@ public class UnityApp {
 
     @Resource
     private ChatHistoryService chatHistoryService;
+
+    // 百炼知识库RAG
+    @Resource
+    private Advisor unityRagBaiLianAdvisor;
 
     /**
      * 系统提示词
@@ -159,6 +161,27 @@ public class UnityApp {
         return unityReport;
     }
 
+
+    /**
+     * RAG调用，此处使用百炼智能体
+     *
+     * @param message
+     * @param unityId
+     * @param modelName
+     * @return
+     */
+    public String doChatWithRag(String message, String unityId, String modelName) {
+        ChatClient chatClient = createChatClient(modelName, unityId);
+        ChatResponse response = chatClient
+                .prompt()
+                .user(message)
+                .advisors(new MyLoggerAdvisor())
+                .advisors(unityRagBaiLianAdvisor)
+                .call()
+                .chatResponse();
+        return response.getResult().getOutput().getText();
+    }
+
     /**
      * UnityApp工具调用
      *
@@ -183,7 +206,7 @@ public class UnityApp {
     }
 
     /**
-     * Flus 流式输出
+     * Flux 流式输出
      *
      * @param message
      * @param unityId
@@ -196,6 +219,8 @@ public class UnityApp {
         return chatClient
                 .prompt()
                 .user(message)
+                .advisors(unityRagBaiLianAdvisor) // 引入百炼知识库rag
+                .toolCallbacks(toolCallbacks)
                 .stream()
                 .content();
     }

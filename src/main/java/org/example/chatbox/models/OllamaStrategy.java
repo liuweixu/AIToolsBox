@@ -1,4 +1,4 @@
-package org.example.chatbox.box.unity.chat_model.models;
+package org.example.chatbox.models;
 
 import jakarta.annotation.Resource;
 import org.example.chatbox.box.unity.enums.ChatModelEnum;

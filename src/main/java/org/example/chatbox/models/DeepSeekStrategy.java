@@ -1,25 +1,25 @@
-package org.example.chatbox.box.unity.chat_model.models;
+package org.example.chatbox.models;
 
-import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import jakarta.annotation.Resource;
 import org.example.chatbox.box.unity.enums.ChatModelEnum;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.deepseek.DeepSeekChatModel;
 import org.springframework.stereotype.Service;
 
 @Service
-public class DashScopeStrategy implements ChatModelStrategy {
+public class DeepSeekStrategy implements ChatModelStrategy {
 
     @Resource
-    private DashScopeChatModel dashScopeChatModel;
+    private DeepSeekChatModel deepSeekChatModel;
 
 
     @Override
     public ChatModel createChatModel() {
-        return dashScopeChatModel;
+        return deepSeekChatModel;
     }
 
     @Override
     public String getPlatformName() {
-        return ChatModelEnum.DASHSCOPE.name();
+        return ChatModelEnum.DEEPSEEK.name();
     }
 }

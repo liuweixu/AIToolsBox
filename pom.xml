@@ -11,8 +11,8 @@
     <groupId>org.example</groupId>
     <artifactId>ChatUnity</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>ChatReact</name>
-    <description>ChatReact</description>
+    <name>ChatUnity</name>
+    <description>ChatUnity</description>
     <url/>
     <licenses>
         <license/>

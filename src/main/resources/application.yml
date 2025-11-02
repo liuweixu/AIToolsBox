@@ -1,6 +1,6 @@
 spring:
   application:
-    name: ChatReact
+    name: ChatUnity
   datasource:
     url: jdbc:mysql://localhost:3306/aitoolbox
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -32,7 +32,7 @@ spring:
     ollama:
       base-url: http://localhost:11434
       chat:
-        model: gemma3:270m
+        model: llama3.2:1b
       embedding:
         options:
           model: qwen3-embedding:latest

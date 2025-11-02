@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class AIManus extends ToolCallAgent {
 
-    public AIManus(ToolCallback[] allTools, @Qualifier("ollamaChatModel") ChatModel chatModel) {
+    public AIManus(ToolCallback[] allTools) {
         super(allTools);
         this.setName("aiManus");
         String SYSTEM_PROMPT = """  
@@ -26,11 +26,6 @@ public class AIManus extends ToolCallAgent {
                 """;
         this.setNextStepPrompt(NEXT_STEP_PROMPT);
         this.setMaxStep(20);
-        // 初始化客户端
-        ChatClient chatClient = ChatClient.builder(chatModel)
-                .defaultAdvisors(new MyLoggerAdvisor())
-                .build();
-        this.setChatClient(chatClient);
     }
 }
 
