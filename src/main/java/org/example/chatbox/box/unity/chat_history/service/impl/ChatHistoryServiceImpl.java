@@ -8,13 +8,12 @@ import org.example.chatbox.box.unity.chat_history.entity.ChatHistory;
 import org.example.chatbox.box.unity.chat_history.entity.ChatHistoryQueryRequest;
 import org.example.chatbox.box.unity.chat_history.mapper.ChatHistoryMapper;
 import org.example.chatbox.box.unity.chat_history.service.ChatHistoryService;
-import org.example.chatbox.box.unity.enums.ChatHistoryMessageTypeEnum;
+import org.example.chatbox.enums.ChatHistoryMessageTypeEnum;
 import org.example.chatbox.exception.ErrorCode;
 import org.example.chatbox.exception.ThrowUtils;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

@@ -3,13 +3,12 @@ package org.example.chatbox.box.unity.controller;
 import com.mybatisflex.core.paginate.Page;
 import org.example.chatbox.box.unity.chat_history.entity.ChatHistory;
 import org.example.chatbox.box.unity.chat_history.service.ChatHistoryService;
-import org.example.chatbox.box.unity.common.BaseResponse;
-import org.example.chatbox.box.unity.common.ResultUtils;
+import org.example.chatbox.common.BaseResponse;
+import org.example.chatbox.common.ResultUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * 对话历史 控制层。

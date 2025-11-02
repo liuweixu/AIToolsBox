@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.chatbox.box.unity.advisor.MyLoggerAdvisor;
 import org.example.chatbox.box.unity.chat_history.service.ChatHistoryService;
 import org.example.chatbox.models.ChatModelFactory;
-import org.example.chatbox.box.unity.enums.ChatModelEnum;
+import org.example.chatbox.enums.ChatModelEnum;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;

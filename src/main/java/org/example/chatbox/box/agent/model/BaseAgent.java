@@ -6,9 +6,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.chatbox.box.agent.enums.AgentState;
+import org.example.chatbox.enums.AgentState;
 import org.example.chatbox.box.agent.service.ChatAgentHistoryService;
-import org.example.chatbox.box.unity.enums.ChatHistoryMessageTypeEnum;
+import org.example.chatbox.enums.ChatHistoryMessageTypeEnum;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
@@ -137,7 +137,7 @@ public abstract class BaseAgent {
                         log.info("Executing step " + stepNumber + "/" + maxStep);
                         // 单步执行
                         String stepResult = step();
-                        String result = "Step " + stepNumber + ":" + stepResult;
+                        String result = "Step " + stepNumber + ":" + stepResult + "\n\n";
                         if (this.isStuck()) {
                             this.handleStuckState();
                         }
@@ -211,6 +211,12 @@ public abstract class BaseAgent {
                 (this.nextStepPrompt != null ? this.nextStepPrompt : "");
         setNextStepPrompt(this.nextStepPrompt);
         System.out.println("AgentApp detected stuck state. Added Prompt " + stuckPrompt);
+
+        // 不终止状态，保持 RUNNING
+        if (this.state == AgentState.RUNNING) {
+            // 可以考虑插入一个提示到 messageList，让下一轮继续
+            this.messageList.add(new UserMessage(this.nextStepPrompt));
+        }
     }
 
     /**

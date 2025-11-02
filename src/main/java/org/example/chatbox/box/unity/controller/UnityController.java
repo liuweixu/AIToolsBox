@@ -6,7 +6,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.chatbox.box.unity.app.UnityApp;
 import org.example.chatbox.box.unity.chat_history.service.ChatHistoryService;
-import org.example.chatbox.box.unity.enums.ChatHistoryMessageTypeEnum;
+import org.example.chatbox.enums.ChatHistoryMessageTypeEnum;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;

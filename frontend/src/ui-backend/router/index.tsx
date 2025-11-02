@@ -46,6 +46,14 @@ export const Router = () => {
           }
         />
         <Route
+          path="agent/:id"
+          element={
+            <Suspense fallback={'加载中'}>
+              <Agent />
+            </Suspense>
+          }
+        />
+        <Route
           path="agent"
           element={
             <Suspense fallback={'加载中'}>

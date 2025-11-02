@@ -3,6 +3,7 @@ package org.example.chatbox.box.unity.chat_history.service;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
+import org.example.chatbox.box.agent.entity.ChatAgentHistory;
 import org.example.chatbox.box.unity.chat_history.entity.ChatHistory;
 import org.example.chatbox.box.unity.chat_history.entity.ChatHistoryQueryRequest;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;

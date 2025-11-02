@@ -2,7 +2,7 @@ package org.example.chatbox.models;
 
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import jakarta.annotation.Resource;
-import org.example.chatbox.box.unity.enums.ChatModelEnum;
+import org.example.chatbox.enums.ChatModelEnum;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.stereotype.Service;
 

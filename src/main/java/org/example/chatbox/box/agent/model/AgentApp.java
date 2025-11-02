@@ -4,6 +4,7 @@ package org.example.chatbox.box.agent.model;
 import com.alibaba.cloud.ai.memory.redis.RedissonRedisChatMemoryRepository;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.example.chatbox.box.agent.service.ChatAgentHistoryService;
 import org.example.chatbox.box.unity.advisor.MyLoggerAdvisor;
 import org.example.chatbox.models.ChatModelFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -22,6 +23,9 @@ public class AgentApp {
 
     private final ChatModelFactory chatModelFactory;
 
+    @Resource
+    private ChatAgentHistoryService chatAgentHistoryService;
+
     /**
      * Redis会话记忆
      */
@@ -38,26 +42,26 @@ public class AgentApp {
      * @param chatModelName
      * @return
      */
-    private ChatClient createChatClient(String chatModelName, String agentId) {
+    private ChatClient createChatClient(String chatModelName, Long agentId) {
         ChatModel chatModel = this.chatModelFactory.getChatModel(chatModelName);
         log.info("ChatModel for AIPlatform: {}", chatModel);
-        // 基于Redis的对话记忆
-        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
-                .chatMemoryRepository(redisChatMemoryRepository)
-                .maxMessages(30)
-                .build();
+//        // 基于Redis的对话记忆
+//        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
+//                .chatMemoryRepository(redisChatMemoryRepository)
+//                .maxMessages(21)
+//                .build();
 
-//        chatHistoryService.loadChatHistoryToMemory(Long.valueOf(agentId), chatMemory, 30);
+//        chatAgentHistoryService.loadAgentHistoryToMemory(agentId, chatMemory, 21);
         log.info("加载对话历史");
         return ChatClient.builder(chatModel)
-                .defaultAdvisors(
-                        MessageChatMemoryAdvisor
-                                .builder(chatMemory)
-                                .conversationId(agentId)
-                                .build(),
-                        // 自定义日志Advisor
-                        new MyLoggerAdvisor()
-                )
+//                .defaultAdvisors(
+//                        MessageChatMemoryAdvisor
+//                                .builder(chatMemory)
+//                                .conversationId(String.valueOf(agentId))
+//                                .build(),
+//                        // 自定义日志Advisor
+//                        new MyLoggerAdvisor()
+//                )
                 .build();
     }
 
@@ -69,9 +73,9 @@ public class AgentApp {
      * @param agentId
      * @return
      */
-    public SseEmitter doChatWithManus(String message, String modelName, String agentId) {
+    public SseEmitter doChatWithManus(String message, String modelName, Long agentId) {
         ChatClient chatClient = createChatClient(modelName, agentId);
         aiManus.setChatClient(chatClient);
-        return aiManus.runStream(message, Long.valueOf(modelName));
+        return aiManus.runStream(message, agentId);
     }
 }

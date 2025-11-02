@@ -13,6 +13,7 @@ import org.springframework.ai.tool.annotation.ToolParam;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class PDFGenerationTool {
     @Tool(
@@ -33,8 +34,10 @@ public class PDFGenerationTool {
                     Document document = new Document(pdfDocument)
             ) {
                 // 运行后自动结束
-                // 使用系统字体而不是中文字体（避免字体问题）
-                PdfFont font = PdfFontFactory.createFont("STSong-Light", "UniGB-UCS2-H");
+                // 使用自定义字体
+                String fontPath = Paths.get("src/main/resources/fonts/microsoftYahei.ttf")
+                        .toAbsolutePath().toString();
+                PdfFont font = PdfFontFactory.createFont(fontPath, PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
                 document.setFont(font);
                 // 创建段落
                 Paragraph paragraph = new Paragraph(content);

@@ -2,7 +2,7 @@ package org.example.chatbox.box.unity.chat_history.entity;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.example.chatbox.box.unity.common.PageRequest;
+import org.example.chatbox.common.PageRequest;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;

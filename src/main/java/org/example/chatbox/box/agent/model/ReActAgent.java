@@ -1,10 +1,8 @@
 package org.example.chatbox.box.agent.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import org.example.chatbox.box.agent.enums.AgentState;
+import org.example.chatbox.enums.AgentState;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -35,6 +33,7 @@ public abstract class ReActAgent extends BaseAgent {
         try {
             boolean shouldAct = think();
             if (!shouldAct) {
+                setState(AgentState.FINISHED);
                 return "思考完成——无需行动";
             }
             return act();

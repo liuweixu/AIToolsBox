@@ -1,8 +1,8 @@
 package org.example.chatbox.exception;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.chatbox.box.unity.common.BaseResponse;
-import org.example.chatbox.box.unity.common.ResultUtils;
+import org.example.chatbox.common.BaseResponse;
+import org.example.chatbox.common.ResultUtils;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
