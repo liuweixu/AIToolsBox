@@ -5,6 +5,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.chatbox.box.unity.advisor.MyLoggerAdvisor;
 import org.example.chatbox.box.unity.chat_history.service.ChatHistoryService;
+import org.example.chatbox.common.RAGFusion;
 import org.example.chatbox.models.ChatModelFactory;
 import org.example.chatbox.enums.ChatModelEnum;
 import org.springframework.ai.chat.client.ChatClient;
@@ -15,9 +16,11 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.preretrieval.query.expansion.MultiQueryExpander;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -90,6 +93,8 @@ public class UnityApp {
         this.chatModelFactory = chatModelFactory;
     }
 
+    @Resource
+    private VectorStore vectorStore;
 
     /**
      * 会话记忆引入Redis
@@ -100,6 +105,10 @@ public class UnityApp {
     private ChatClient createChatClient(String chatModelName, String unityId) {
         ChatModel chatModel = this.chatModelFactory.getChatModel(chatModelName);
         log.info("ChatModel for AIPlatform: {}", chatModel);
+
+        // 添加RRF-Fusion算法
+        RAGFusion ragFusion = new RAGFusion();
+        RetrievalAugmentationAdvisor ragAdvisor = ragFusion.advisor(chatModel, vectorStore);
 
         // 基于Redis的对话记忆
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
@@ -116,6 +125,7 @@ public class UnityApp {
                                 .builder(chatMemory)
                                 .conversationId(unityId)
                                 .build(),
+//                        ragAdvisor,
                         // 自定义日志Advisor
                         new MyLoggerAdvisor()
                 )

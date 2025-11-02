@@ -1,9 +1,8 @@
 package org.example.chatbox.config;
 
-import org.springframework.ai.embedding.EmbeddingModel;
+import com.alibaba.cloud.ai.dashscope.embedding.DashScopeEmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.JedisPooled;
@@ -20,11 +19,11 @@ class VectorConfiguration {
      * @return
      */
     @Bean
-    public VectorStore vectorStore(@Qualifier("ollamaEmbeddingModel") EmbeddingModel embeddingModel) {
+    public VectorStore vectorStore(DashScopeEmbeddingModel embeddingModel) {
         return RedisVectorStore.builder(jedisPool(), embeddingModel)
                 .indexName("spring-ai-index")
                 .initializeSchema(true)
-                .prefix("spring-ai-redis-prefix")
+                .prefix("embedding")
                 .build();
     }
 

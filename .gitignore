@@ -48,3 +48,4 @@ build/
 /src/test/java/org/example/chatbox/test/
 /src/test/java/org/example/chatbox/imagetest/
 /src/main/resources/application-dev.yml
+/src/main/resources/document/深入理解C (3rd Edition).pdf

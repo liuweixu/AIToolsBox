@@ -35,8 +35,7 @@ public class RRFFusionProcessor {
 
         // 按 RRF 分数降序排序
         List<Document> fusedList = new ArrayList<>(documentMap.values());
-        fusedList.sort((d1, d2) ->
-                Double.compare(scoreMap.get(d2.getId()), scoreMap.get(d1.getId())));
+        fusedList.sort((d1, d2) -> Double.compare(scoreMap.get(d2.getId()), scoreMap.get(d1.getId())));
         return fusedList;
     }
 
