@@ -35,17 +35,18 @@ build/
 ### VS Code ###
 .vscode/
 /src/main/resources/application-dev.yml
-/src/main/java/org/example/chatbox/box/unity/test/
+/src/main/java/org/example/aitoolsbox/box/unity/test/
 /src/main/resources/prompt/
-/src/test/java/org/example/chatreact/UnityAppTest.java
+/src/test/java/org/example/aitoolsbox/UnityAppTest.java
 /ToDO.md
-/src/test/java/org/example/chatreact/PgVectorVectorStoreConfigTest.java
+/src/test/java/org/example/aitoolsbox/PgVectorVectorStoreConfigTest.java
 /tmp/
-/src/test/java/org/example/chatreact/FileOperationToolTest.java
-/src/test/java/org/example/chatreact/WebScrapingToolTest.java
-/src/test/java/org/example/chatreact/test/
-/src/main/java/org/example/chatbox/box/unity/test/
-/src/test/java/org/example/chatbox/test/
-/src/test/java/org/example/chatbox/imagetest/
+/src/test/java/org/example/aitoolsbox/FileOperationToolTest.java
+/src/test/java/org/example/aitoolsbox/WebScrapingToolTest.java
+/src/test/java/org/example/aitoolsbox/test/
+/src/main/java/org/example/aitoolsbox/box/unity/test/
+/src/test/java/org/example/aitoolsbox/test/
+/src/test/java/org/example/aitoolsbox/imagetest/
 /src/main/resources/application-dev.yml
 /src/main/resources/document/深入理解C (3rd Edition).pdf
+/src/test/java/org/example/aitoolsbox/test/

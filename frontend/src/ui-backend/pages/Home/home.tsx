@@ -5,8 +5,8 @@ const App = () => {
   const navigate = useNavigate()
   return (
     <div className="flex flex-col justify-center items-center h-full p-8">
-      <h1 className="text-6xl font-bold mb-12" style={{ fontFamily: 'KaiTi, STKaiti, 楷体, serif' }}>
-        AI工具箱
+      <h1 className="text-7xl font-bold mb-12" style={{ fontFamily: 'KaiTi, STKaiti, 楷体, serif' }}>
+        AI创智工坊
       </h1>
       <div className="flex items-center gap-8">
         <div style={{ marginTop: 0 }}>
