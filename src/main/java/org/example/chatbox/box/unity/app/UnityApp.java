@@ -1,34 +1,34 @@
 package org.example.chatbox.box.unity.app;
 
-import com.alibaba.cloud.ai.memory.redis.RedissonRedisChatMemoryRepository;
+
+import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.chatbox.box.unity.advisor.MyLoggerAdvisor;
+import org.example.chatbox.box.unity.chat_history.entity.ChatClientKey;
 import org.example.chatbox.box.unity.chat_history.service.ChatHistoryService;
 import org.example.chatbox.common.RAGFusion;
+import org.example.chatbox.config.RedisMemoryRepository;
 import org.example.chatbox.models.ChatModelFactory;
 import org.example.chatbox.enums.ChatModelEnum;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
-import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
-import org.springframework.ai.rag.preretrieval.query.expansion.MultiQueryExpander;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @Slf4j
@@ -36,15 +36,16 @@ public class UnityApp {
 
     private final ChatModelFactory chatModelFactory;
 
-    // 缓存每个平台的 ChatClient
-    private final Map<String, ChatClient> chatClientCache = new ConcurrentHashMap<>();
+
+//    @Resource
+//    private RedissonRedisChatMemoryRepository redisChatMemoryRepository;
 
     @Resource
-    private RedissonRedisChatMemoryRepository redisChatMemoryRepository;
+    private RedisMemoryRepository redisMemoryRepository;
 
     // 导入工厂
     @Resource
-    private ToolCallback[] toolCallbacks;
+    private ToolCallback[] allTools;
 
     @Resource
     private ChatHistoryService chatHistoryService;
@@ -55,6 +56,10 @@ public class UnityApp {
 
     @Resource
     private ToolCallbackProvider toolCallbackProvider;
+
+    // 引入向量数据库（只适用于本地RAG时）
+    @Resource
+    private VectorStore vectorStore;
 
     /**
      * 系统提示词
@@ -79,9 +84,18 @@ public class UnityApp {
             
             始终以一位亲切、专业的 Unity 导师身份进行交流，帮助用户真正掌握 Unity 与 C# 游戏开发技能。
             """;
-    @Autowired
-    private ChatMemory chatMemory;
 
+
+    /**
+     * 根据unityId获取服务，带缓存
+     */
+    @Resource
+    public Cache<ChatClientKey, ChatClient> serviceCache;
+
+    public ChatClient getChatClientByCaffeine(String unityId, String modelName) {
+        ChatClientKey chatClientKey = new ChatClientKey(unityId, modelName);
+        return serviceCache.get(chatClientKey, key -> createChatClient(key.modelName(), key.unityId()));
+    }
 
     /**
      * 构造对象
@@ -93,8 +107,6 @@ public class UnityApp {
         this.chatModelFactory = chatModelFactory;
     }
 
-    @Resource
-    private VectorStore vectorStore;
 
     /**
      * 会话记忆引入Redis
@@ -112,7 +124,7 @@ public class UnityApp {
 
         // 基于Redis的对话记忆
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
-                .chatMemoryRepository(redisChatMemoryRepository)
+                .chatMemoryRepository(redisMemoryRepository)
                 .maxMessages(20)
                 .build();
 
@@ -214,7 +226,7 @@ public class UnityApp {
                 .user(message)
                 //TODO  开启日志，观察效果
 //                .advisors(new MyLoggerAdvisor())
-                .toolCallbacks(toolCallbacks)
+                .toolCallbacks(allTools)
                 .call()
                 .chatResponse();
         String content = response.getResult().getOutput().getText();
@@ -232,12 +244,13 @@ public class UnityApp {
      */
     public Flux<String> doChatByStream(String message, String unityId, String modelName) {
         log.info("unityid: {}", unityId);
-        ChatClient chatClient = createChatClient(modelName, unityId);
+//        ChatClient chatClient = createChatClient(modelName, unityId);
+        ChatClient chatClient = getChatClientByCaffeine(unityId, modelName);
         return chatClient
                 .prompt()
                 .user(message)
                 .advisors(unityRagBaiLianAdvisor) // 引入百炼知识库rag
-                .toolCallbacks(toolCallbacks)
+                .toolCallbacks(allTools)
                 .toolCallbacks(toolCallbackProvider)
                 .stream()
                 .content();

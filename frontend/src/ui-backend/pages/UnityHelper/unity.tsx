@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { Button, Input, Select, Space } from 'antd'
-import { PaperClipOutlined, SendOutlined } from '@ant-design/icons'
+import { FileOutlined, PaperClipOutlined, SendOutlined } from '@ant-design/icons'
 import { marked } from 'marked'
 import 'github-markdown-css/github-markdown.css'
 import './style.css'
@@ -488,6 +488,11 @@ export const Unity = () => {
         key: 'deleteConversation',
         icon: <DeleteOutlined />,
         danger: true
+      },
+      {
+        label: '导出markdown',
+        key: 'exportMarkdown',
+        icon: <FileOutlined />
       }
     ],
     onClick: (menuInfo) => {

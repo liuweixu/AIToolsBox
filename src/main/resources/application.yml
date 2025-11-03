@@ -50,8 +50,9 @@ spring:
     redis:
       port: 6379
       database: 0
-      username: root
-      password:
+      # 如果 Redis 没有启用认证，则不需要 password
+      # 如果 Redis 使用密码认证（不需要用户名），设置密码：
+      # password: your_redis_password
       host: localhost
       timeout: 3600
 
@@ -70,3 +71,9 @@ alibaba:
 
 search-api:
   api-key: ${YOUR_API_KEY}
+
+# 设置超时时间
+chat:
+  memory:
+    redis:
+      ttl-minutes: 60

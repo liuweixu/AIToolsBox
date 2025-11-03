@@ -27,12 +27,6 @@ public class AgentApp {
     @Resource
     private ChatAgentHistoryService chatAgentHistoryService;
 
-    /**
-     * Redis会话记忆
-     */
-    @Resource
-    private RedissonRedisChatMemoryRepository redisChatMemoryRepository;
-
     @Resource
     private ToolCallbackProvider toolCallbackProvider;
 

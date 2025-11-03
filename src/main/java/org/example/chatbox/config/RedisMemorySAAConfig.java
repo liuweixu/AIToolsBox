@@ -1,15 +1,12 @@
 package org.example.chatbox.config;
 
 import com.alibaba.cloud.ai.memory.redis.RedissonRedisChatMemoryRepository;
-import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.lang.reflect.Field;
-
-@Configuration
-public class MemoryConfig {
+//@Configuration
+public class RedisMemorySAAConfig {
 
     @Value("${spring.data.redis.host}")
     private String redisHost;

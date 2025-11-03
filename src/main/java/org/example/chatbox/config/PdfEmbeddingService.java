@@ -8,7 +8,6 @@ import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 

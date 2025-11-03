@@ -112,6 +112,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         // 按时间顺序添加到记忆中
         int loadedCount = 0;
         // 先清理历史缓存，防止重复加载
+        chatMemory.clear(String.valueOf(unityId));
         try {
             for (ChatHistory chatHistory : historyList) {
                 if (ChatHistoryMessageTypeEnum.USER.getValue().equals(chatHistory.getMessageType())) {

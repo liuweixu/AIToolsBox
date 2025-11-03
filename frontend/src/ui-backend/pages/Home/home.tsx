@@ -20,7 +20,7 @@ const App = () => {
             <Card.Meta title="Unity助手" description="可以就Unity和C#遇到的问题与AI对话" />
           </Card>
         </div>
-        <div style={{ marginTop: '60px' }}>
+        <div style={{ marginTop: '100px' }}>
           <Card
             hoverable
             style={{ width: 240 }}
@@ -42,7 +42,7 @@ const App = () => {
             <Card.Meta title="文字生图片" description="通过输入文字，生成精美图片" />
           </Card>
         </div>
-        <div style={{ marginTop: '60px' }}>
+        <div style={{ marginTop: '100px' }}>
           <Card
             hoverable
             style={{ width: 240 }}
