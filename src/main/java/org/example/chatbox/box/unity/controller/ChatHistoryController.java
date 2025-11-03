@@ -2,6 +2,7 @@ package org.example.chatbox.box.unity.controller;
 
 import com.mybatisflex.core.paginate.Page;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.example.chatbox.box.unity.chat_history.entity.ChatHistory;
 import org.example.chatbox.box.unity.chat_history.service.ChatHistoryService;
 import org.example.chatbox.common.BaseResponse;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
  */
 @RestController
 @RequestMapping("/unity/history")
+@Slf4j
 public class ChatHistoryController {
 
     @Autowired

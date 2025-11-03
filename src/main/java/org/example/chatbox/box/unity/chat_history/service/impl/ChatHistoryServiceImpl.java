@@ -79,7 +79,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     @Override
     public Page<ChatHistory> listChatHistoryByUnityId(Long unityId, int pageSize, LocalDateTime lastCreateTime) {
         ThrowUtils.throwIf(unityId == null || unityId <= 0, ErrorCode.PARAMS_ERROR, "对话框ID不能为空");
-        ThrowUtils.throwIf(pageSize <= 0 || pageSize > 50, ErrorCode.PARAMS_ERROR, "页面大小必须在1-50之间");
+        ThrowUtils.throwIf(pageSize <= 0 || pageSize > 100, ErrorCode.PARAMS_ERROR, "页面大小必须在1-100之间");
         // 构建查询条件
         ChatHistoryQueryRequest chatHistoryQueryRequest = new ChatHistoryQueryRequest();
         chatHistoryQueryRequest.setUnityId(unityId);

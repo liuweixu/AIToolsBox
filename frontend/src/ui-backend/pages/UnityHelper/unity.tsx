@@ -1,13 +1,13 @@
 import { useRef } from 'react'
-import { Button, Input, Select, Space } from 'antd'
-import { FileOutlined, PaperClipOutlined, SendOutlined } from '@ant-design/icons'
+import { Button, Input, Select, Space, message } from 'antd'
+import { PaperClipOutlined, SendOutlined } from '@ant-design/icons'
 import { marked } from 'marked'
 import 'github-markdown-css/github-markdown.css'
 import './style.css'
 import { createChatUnity, getChatUnityHistory } from '@/ui-backend/apis/unity'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
-import { DeleteOutlined } from '@ant-design/icons'
+import { DeleteOutlined, DownloadOutlined } from '@ant-design/icons'
 import { Conversations } from '@ant-design/x'
 import type { ConversationsProps } from '@ant-design/x'
 import { theme, type GetProp } from 'antd'
@@ -481,6 +481,157 @@ export const Unity = () => {
     }
   }, [refreshTrigger])
 
+  // 格式化消息为 Markdown 的辅助函数
+  const formatMessagesToMarkdown = (title: string, messages: Message[]): string => {
+    let markdown = `# ${title}\n\n`
+    markdown += `导出时间: ${new Date().toLocaleString('zh-CN')}\n\n`
+    markdown += `---\n\n`
+
+    messages.forEach((message) => {
+      const roleLabel = message.role === 'user' ? '**用户**' : '**Unity助手**'
+      const timeLabel = message.createTime ? `*(${new Date(message.createTime).toLocaleString('zh-CN')})*` : ''
+
+      markdown += `## ${roleLabel} ${timeLabel}\n\n`
+      markdown += `${message.content}\n\n`
+      markdown += `---\n\n`
+    })
+
+    return markdown
+  }
+
+  // 导出对话历史为 Markdown
+  const exportChatHistoryToMarkdown = async (chatId: string) => {
+    try {
+      message.loading({ content: '正在导出对话历史...', key: 'export', duration: 0 })
+
+      // 获取对话标题
+      const chatInfo = chatList.find((c) => c.key === chatId)
+      let chatTitle = String(chatInfo?.label || '对话记录')
+
+      // 清理文件名，移除特殊字符
+      chatTitle = chatTitle.replace(/[<>:"/\\|?*]/g, '').trim() || '对话记录'
+
+      // 获取所有历史记录（循环加载直到没有更多）
+      let allMessages: Message[] = []
+      let lastCreateTime: string | undefined = undefined
+      let hasMore = true
+
+      while (hasMore) {
+        const res = await getChatUnityHistory(chatId, 50, lastCreateTime) // 每次加载50条
+
+        // 检查响应结构
+        if (!res || !res.data) {
+          console.warn('API 响应无效:', res)
+          hasMore = false
+          break
+        }
+
+        const historyData = res.data.data
+
+        // 检查返回数据是否有效
+        if (!historyData) {
+          console.warn('获取历史记录失败，返回数据为空，响应:', res)
+          hasMore = false
+          break
+        }
+
+        const records = Array.isArray(historyData.records) ? historyData.records : []
+
+        if (records.length === 0) {
+          hasMore = false
+          break
+        }
+
+        // 转换为 Message 格式
+        const newMessages: Message[] = records.map((record: HistoryRecord) => ({
+          role: record.messageType === 'user' ? 'user' : 'assistant',
+          content: record.message || '',
+          createTime: record.createTime
+        }))
+
+        // 由于后端返回的是降序，需要反转并追加到前面
+        allMessages = [...newMessages.reverse(), ...allMessages]
+
+        // 判断是否还有更多
+        hasMore = records.length >= 100
+        if (hasMore && newMessages.length > 0) {
+          lastCreateTime = newMessages[0].createTime
+        } else {
+          hasMore = false
+        }
+      }
+
+      // 如果没有消息，提示用户
+      if (allMessages.length === 0) {
+        message.destroy('export')
+        message.warning('该对话没有历史记录')
+        return
+      }
+
+      // 格式化为 Markdown
+      const markdownContent = formatMessagesToMarkdown(chatTitle, allMessages)
+      console.log('Markdown 内容长度:', markdownContent.length)
+
+      // 创建并下载文件
+      const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+
+      // 生成安全的文件名
+      const dateStr = new Date().toISOString().split('T')[0]
+      const safeFileName = `${chatTitle}_${dateStr}.md`
+
+      console.log('准备下载文件:', safeFileName, 'Blob大小:', blob.size)
+
+      // 尝试使用新的下载方式
+      try {
+        const link = document.createElement('a')
+        link.href = url
+        link.download = safeFileName
+        link.style.display = 'none'
+        document.body.appendChild(link)
+
+        // 触发点击事件
+        const clickEvent = new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          view: window
+        })
+        link.dispatchEvent(clickEvent)
+
+        console.log('已触发下载')
+
+        // 延迟清理，确保下载开始
+        setTimeout(() => {
+          if (document.body.contains(link)) {
+            document.body.removeChild(link)
+          }
+          URL.revokeObjectURL(url)
+          message.destroy('export')
+          message.success(`对话历史已导出: ${safeFileName}`)
+        }, 500)
+      } catch (downloadError) {
+        console.error('下载触发失败:', downloadError)
+        // 备用方案：使用 window.open
+        const newWindow = window.open(url, '_blank')
+        if (!newWindow) {
+          message.destroy('export')
+          message.error('浏览器阻止了下载，请检查浏览器设置')
+          URL.revokeObjectURL(url)
+        } else {
+          setTimeout(() => {
+            URL.revokeObjectURL(url)
+            message.destroy('export')
+            message.success('对话历史已在新窗口打开')
+          }, 500)
+        }
+      }
+    } catch (error) {
+      message.destroy('export')
+      console.error('导出对话历史失败:', error)
+      message.error('导出失败，请重试')
+    }
+  }
+
   const menuConfig: ConversationsProps['menu'] = (conversation) => ({
     items: [
       {
@@ -490,36 +641,45 @@ export const Unity = () => {
         danger: true
       },
       {
-        label: '导出markdown',
+        label: '导出为 Markdown',
         key: 'exportMarkdown',
-        icon: <FileOutlined />
+        icon: <DownloadOutlined />
       }
     ],
     onClick: (menuInfo) => {
       menuInfo.domEvent.stopPropagation()
-      const deletedChatId = conversation.key
-      const isActiveChat = deletedChatId === activeChatId
+      const chatId = conversation.key
 
-      // 如果删除的是当前激活的会话，先清空 activeChatId（会触发 useEffect 自动导航）
-      if (isActiveChat) {
-        setActiveChatId('')
-        // 同时从本地 chats 中删除
-        setChats((prev) => prev.filter((c) => c.id !== deletedChatId))
+      if (menuInfo.key === 'exportMarkdown') {
+        exportChatHistoryToMarkdown(chatId)
+        return
       }
 
-      // 更新列表（先更新，避免列表显示延迟）
-      setChatList((prev) => prev.filter((c) => c.key !== deletedChatId))
+      if (menuInfo.key === 'deleteConversation') {
+        const deletedChatId = chatId
+        const isActiveChat = deletedChatId === activeChatId
 
-      deleteChatUnity(deletedChatId)
-        .then(() => {
-          // 重新获取列表以同步最新状态
-          return getChatList()
-        })
-        .catch((err) => {
-          console.log(err)
-          // 如果删除失败，恢复列表
-          getChatList()
-        })
+        // 如果删除的是当前激活的会话，先清空 activeChatId（会触发 useEffect 自动导航）
+        if (isActiveChat) {
+          setActiveChatId('')
+          // 同时从本地 chats 中删除
+          setChats((prev) => prev.filter((c) => c.id !== deletedChatId))
+        }
+
+        // 更新列表（先更新，避免列表显示延迟）
+        setChatList((prev) => prev.filter((c) => c.key !== deletedChatId))
+
+        deleteChatUnity(deletedChatId)
+          .then(() => {
+            // 重新获取列表以同步最新状态
+            return getChatList()
+          })
+          .catch((err) => {
+            console.log(err)
+            // 如果删除失败，恢复列表
+            getChatList()
+          })
+      }
     }
   })
 
