@@ -11,7 +11,7 @@ import java.util.Map;
 
 @SpringBootTest
 @Slf4j
-class ChatBoxApplicationTests {
+class AIToolsBoxApplicationTests {
 
     @Test
     void contextLoads() throws IOException, InterruptedException {
