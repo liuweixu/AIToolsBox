@@ -1,4 +1,4 @@
-package org.example.chatbox.box.multimodal.imagemodel;
+package org.example.chatbox.box.multimodal.text2video.service.impl;
 
 import com.alibaba.dashscope.aigc.videosynthesis.VideoSynthesis;
 import com.alibaba.dashscope.aigc.videosynthesis.VideoSynthesisParam;
@@ -6,6 +6,8 @@ import com.alibaba.dashscope.aigc.videosynthesis.VideoSynthesisResult;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.dashscope.utils.Constants;
+import lombok.extern.slf4j.Slf4j;
+import org.example.chatbox.box.multimodal.text2video.service.Text2VideoService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
-public class Text2VideoService {
+@Slf4j
+public class Text2VideoServiceImpl implements Text2VideoService {
 
     @Value("${alibaba.api_key}")
     private String apiKey;
@@ -23,7 +26,7 @@ public class Text2VideoService {
     private String modelName;
 
 
-    public String getVideoUrl(String prompt, String size, int number) {
+    public VideoSynthesisResult getVideoUrl(String prompt, String size, int number) {
         Constants.baseHttpApiUrl = baseImageUrl;
         // 设置parameters参数
         Map<String, Object> parameters = new HashMap<>();
@@ -50,6 +53,7 @@ public class Text2VideoService {
         } catch (InputRequiredException | NoApiKeyException e) {
             throw new RuntimeException(e);
         }
-        return result.getOutput().getVideoUrl();
+        log.info("videoUrl:{}", result.getOutput().getVideoUrl());
+        return result;
     }
 }

@@ -1,19 +1,48 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Form, Input, Select, Button, message, Spin } from 'antd'
-import { getImageUrl } from '@/ui-backend/apis/text2image'
+import { getImageUrl, getImageList, deleteImage } from '@/ui-backend/apis/text2image'
 
 const { TextArea } = Input
+
+interface ImageItem {
+  imgUrl: string | undefined
+  id: number
+  message: string
+}
 
 export const ImageGenerator = () => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
-  const [imageUrl, setImageUrl] = useState<string>('')
+  const [imageList, setImageList] = useState<ImageItem[]>([])
+  const [listLoading, setListLoading] = useState(false)
 
   interface FormValues {
     prompt: string
     size?: string
     number?: number
   }
+
+  // 获取图片列表
+  const fetchImageList = async () => {
+    try {
+      setListLoading(true)
+      const response = await getImageList()
+      // 假设返回格式为 { data: [...] } 或 { data: { data: [...] } }
+      let list = response.data?.data || response.data || []
+      list = list.reverse()
+      setImageList(Array.isArray(list) ? list : [])
+    } catch (error: unknown) {
+      console.error('获取图片列表失败:', error)
+      message.error('获取图片列表失败')
+    } finally {
+      setListLoading(false)
+    }
+  }
+
+  // 组件加载时获取图片列表
+  useEffect(() => {
+    fetchImageList()
+  }, [])
 
   const onFinish = async (values: FormValues) => {
     try {
@@ -24,8 +53,10 @@ export const ImageGenerator = () => {
       // 假设返回格式为 { data: { data: "url" } } 或 { data: "url" }
       const url = response.data?.data || response.data
       if (url) {
-        setImageUrl(url)
         message.success('图片生成成功！')
+        // 生成成功后刷新列表
+        await fetchImageList()
+        form.resetFields()
       } else {
         message.error('获取图片URL失败')
       }
@@ -39,6 +70,21 @@ export const ImageGenerator = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  // 下载图片
+  const handleDownload = (url: string) => {
+    const link = document.createElement('a')
+    link.href = url
+    link.download = ''
+    link.target = '_blank'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+  const handleDelete = async (id: number) => {
+    await deleteImage(id)
+    await fetchImageList()
   }
 
   return (
@@ -77,7 +123,7 @@ export const ImageGenerator = () => {
         </Card>
       </div>
 
-      {/* 下半部分：显示图片 */}
+      {/* 下半部分：图片列表 */}
       <div className="flex-1">
         {loading && (
           <div className="flex justify-center items-center py-8">
@@ -85,22 +131,36 @@ export const ImageGenerator = () => {
           </div>
         )}
 
-        {imageUrl && !loading && (
-          <Card>
-            <div className="mb-4">
-              <strong>提示词：</strong>
-              <span className="ml-2">{form.getFieldValue('prompt')}</span>
+        <Card title="图片列表" loading={listLoading}>
+          {imageList.length === 0 && !listLoading ? (
+            <div className="text-center text-gray-400 py-8">暂无图片</div>
+          ) : (
+            <div className="grid grid-cols-3 gap-6">
+              {imageList.map((item) => (
+                <div key={item.id} className="flex flex-col">
+                  <div className="flex justify-center mb-4">
+                    <img
+                      src={item.imgUrl}
+                      alt={item.message || '生成的图片'}
+                      className="max-w-full h-auto rounded-lg shadow-md"
+                    />
+                  </div>
+                  <div className="text flex flex-col justify-center items-center">
+                    {'提示词：' + item.message}
+                    <div>
+                      <Button type="link" onClick={() => handleDownload(item.imgUrl || '')}>
+                        下载
+                      </Button>
+                      <Button type="link" onClick={() => handleDelete(item.id)}>
+                        删除
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="flex justify-center">
-              <img src={imageUrl} alt="生成的图片" className="max-w-full h-auto" />
-            </div>
-            <div className="mt-4 text-center">
-              <Button type="link" href={imageUrl} download target="_blank">
-                下载
-              </Button>
-            </div>
-          </Card>
-        )}
+          )}
+        </Card>
       </div>
     </div>
   )

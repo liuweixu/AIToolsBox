@@ -2,7 +2,7 @@ spring:
   profiles:
     active: dev
   application:
-    name: ChatUnity
+    name: AIToolsBox
   datasource:
     url: jdbc:mysql://localhost:3306/aitoolbox
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -77,3 +77,12 @@ chat:
   memory:
     redis:
       ttl-minutes: 60
+
+# COS
+cos:
+  client:
+    bucket:
+    host:
+    secret-id:
+    secret-key:
+    region:

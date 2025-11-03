@@ -13,9 +13,7 @@ const App = () => {
           <Card
             hoverable
             style={{ width: 240 }}
-            cover={
-              <img draggable={false} alt="example" src="https://api.r10086.com/樱道随机图片api接口.php?图片系列=风景系列1" />
-            }
+            cover={<img draggable={true} alt="example" src="https://api.r10086.com/樱道随机图片api接口.php?图片系列=风景系列1" />}
             onClick={() => navigate('/unityhelper')}>
             <Card.Meta title="Unity助手" description="可以就Unity和C#遇到的问题与AI对话" />
           </Card>
@@ -24,9 +22,7 @@ const App = () => {
           <Card
             hoverable
             style={{ width: 240 }}
-            cover={
-              <img draggable={false} alt="example" src="https://api.r10086.com/樱道随机图片api接口.php?图片系列=风景系列4" />
-            }
+            cover={<img draggable={true} alt="example" src="https://api.r10086.com/樱道随机图片api接口.php?图片系列=风景系列4" />}
             onClick={() => navigate('/agent')}>
             <Card.Meta title="AI超级智能体" description="提出一个需求，智能体帮你做事" />
           </Card>
@@ -35,9 +31,7 @@ const App = () => {
           <Card
             hoverable
             style={{ width: 240 }}
-            cover={
-              <img draggable={false} alt="example" src="https://api.r10086.com/樱道随机图片api接口.php?图片系列=风景系列7" />
-            }
+            cover={<img draggable={true} alt="example" src="https://api.r10086.com/樱道随机图片api接口.php?图片系列=风景系列7" />}
             onClick={() => navigate('/text2image')}>
             <Card.Meta title="文字生图片" description="通过输入文字，生成精美图片" />
           </Card>
@@ -46,9 +40,7 @@ const App = () => {
           <Card
             hoverable
             style={{ width: 240 }}
-            cover={
-              <img draggable={false} alt="example" src="https://api.r10086.com/樱道随机图片api接口.php?图片系列=风景系列6" />
-            }
+            cover={<img draggable={true} alt="example" src="https://api.r10086.com/樱道随机图片api接口.php?图片系列=风景系列6" />}
             onClick={() => navigate('/text2video')}>
             <Card.Meta title="文字生视频" description="通过输入文字，生成生动影片" />
           </Card>

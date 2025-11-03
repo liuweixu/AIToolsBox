@@ -11,7 +11,7 @@ import java.util.Map;
 public class MyBatisCodeGenerator {
 
     // 需要生成的表名
-    private static final String[] TABLE_NAMES = {"chat_agent"};
+    private static final String[] TABLE_NAMES = {"video_save"};
 
     public static void main(String[] args) {
         // 获取数据源信息
@@ -43,7 +43,7 @@ public class MyBatisCodeGenerator {
 
         // 设置根包，建议先生成到一个临时目录下，生成代码后，再移动到项目目录下
         globalConfig.getPackageConfig()
-                .setBasePackage("org.example.chatbox.box.agent");
+                .setBasePackage("org.example.chatbox.box.multimodal.video2image");
 
         // 设置表前缀和只生成哪些表，setGenerateTable 未配置时，生成所有表
         globalConfig.getStrategyConfig()

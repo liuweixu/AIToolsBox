@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>org.example</groupId>
-    <artifactId>ChatUnity</artifactId>
+    <artifactId>AIToolsBox</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>ChatUnity</name>
-    <description>ChatUnity</description>
+    <name>AIToolsBox</name>
+    <description>AIToolsBox</description>
     <url/>
     <licenses>
         <license/>
@@ -214,10 +214,18 @@
             <artifactId>spring-ai-pdf-document-reader</artifactId>
             <version>1.1.0-M3</version>
         </dependency>
-        <!--        <dependency>-->
-        <!--            <groupId>org.apache.commons</groupId>-->
-        <!--            <artifactId>commons-pool2</artifactId>-->
-        <!--        </dependency>-->
+        <!-- LangGraph4j -->
+        <dependency>
+            <groupId>org.bsc.langgraph4j</groupId>
+            <artifactId>langgraph4j-core</artifactId>
+            <version>1.6.0-rc2</version>
+        </dependency>
+        <!-- 腾讯云 cos 服务 -->
+        <dependency>
+            <groupId>com.qcloud</groupId>
+            <artifactId>cos_api</artifactId>
+            <version>5.6.255</version>
+        </dependency>
 
 
         <!-- 很不想用，但不得不用-->
