@@ -692,16 +692,16 @@ export const Unity = () => {
   return (
     <div className="flex h-[calc(100vh-96px)] min-h-0 bg-white">
       {/* 左侧会话与操作栏（保留会话，可删除） */}
-      <div className="w-72 border-r border-gray-200 p-4 flex flex-col gap-3 min-h-0">
+      <div className="w-72 border-r border-gray-200 p-4 flex flex-col gap-3 min-h-0 ">
         <div className="text-lg font-semibold flex-shrink-0">Unity 助手</div>
         <Button
           size="large"
           onClick={handleNewChat}
-          className="w-full !bg-white !text-gray-900 !border-0 !rounded-full !shadow-sm hover:!bg-gray-50 !h-auto !py-3 !px-6 !flex !items-center !justify-center !gap-2 flex-shrink-0">
+          className="w-full  !text-gray-900 !border-0 !rounded-full !shadow-sm hover:!bg-gray-50 !h-auto !py-3 !px-6 !flex !items-center !justify-center !gap-2 flex-shrink-0">
           开启新对话
         </Button>
         <div className="text-xs text-gray-500 flex-shrink-0"> 共计 {chatList.length} 条对话</div>
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 ">
           <div id="scrollableDiv" style={{ height: '100%', overflow: 'auto' }}>
             <InfiniteScroll
               dataLength={chatList.length}
