@@ -669,7 +669,7 @@ export const AgentHelper = () => {
   return (
     <div className="flex h-[calc(100vh-96px)] min-h-0 bg-white">
       {/* 左侧会话与操作栏（保留会话，可删除） */}
-      <div className="w-72 border-r border-gray-200 p-4 flex flex-col gap-3 min-h-0">
+      <div className="w-72 border-r border-gray-200 p-4 flex flex-col gap-3 min-h-0 bg-gray-100">
         <div className="text-lg font-semibold flex-shrink-0">AI 超级智能体</div>
         <Button
           size="large"
@@ -687,6 +687,7 @@ export const AgentHelper = () => {
               loader={<div>Loading...</div>}
               scrollableTarget="scrollableDiv">
               <Conversations
+                className="!bg-gray-100"
                 activeKey={activeChatId}
                 onActiveChange={handleActiveChange}
                 menu={menuConfig}
@@ -723,7 +724,7 @@ export const AgentHelper = () => {
                     <div
                       className={
                         'inline-block max-w-[80%] rounded-2xl px-4 py-2 ' +
-                        (m.role === 'user' ? 'bg-blue-100 text-black' : 'bg-white text-black')
+                        (m.role === 'user' ? 'bg-blue-200 text-black' : 'bg-gray-100 text-black')
                       }>
                       {m.role === 'assistant' && m.content ? (
                         <div
