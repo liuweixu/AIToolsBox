@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.aitoolsbox.box.unity.advisor.MyLoggerAdvisor;
+import org.example.aitoolsbox.box.unity.advisor.PromptSafetyAdvisor;
 import org.example.aitoolsbox.box.unity.advisor.ReReadingAdvisor;
 import org.example.aitoolsbox.box.unity.chat_history.entity.ChatClientKey;
 import org.example.aitoolsbox.box.unity.chat_history.service.ChatHistoryService;
@@ -19,6 +20,7 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
@@ -251,6 +253,7 @@ public class UnityApp {
                 .prompt()
                 .user(message)
                 .advisors(unityRagBaiLianAdvisor) // 引入百炼知识库rag
+                .advisors(new PromptSafetyAdvisor()) // 引入输入安全机制
                 .toolCallbacks(allTools)
                 .toolCallbacks(toolCallbackProvider)
                 .stream()
