@@ -1,10 +1,11 @@
-package org.example.aitoolsbox.box.unity.app;
+package org.example.aitoolsbox.box.unity.manager;
 
 
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.aitoolsbox.box.unity.advisor.MyLoggerAdvisor;
+import org.example.aitoolsbox.box.unity.advisor.ReReadingAdvisor;
 import org.example.aitoolsbox.box.unity.chat_history.entity.ChatClientKey;
 import org.example.aitoolsbox.box.unity.chat_history.service.ChatHistoryService;
 import org.example.aitoolsbox.common.RAGFusion;
@@ -138,7 +139,8 @@ public class UnityApp {
                                 .build(),
 //                        ragAdvisor,
                         // 自定义日志Advisor
-                        new MyLoggerAdvisor()
+                        new MyLoggerAdvisor(),
+                        new ReReadingAdvisor()
                 )
                 .build();
     }

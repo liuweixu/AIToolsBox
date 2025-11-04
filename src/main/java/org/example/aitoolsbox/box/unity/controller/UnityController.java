@@ -4,7 +4,7 @@ import com.alibaba.dashscope.utils.JsonUtils;
 import com.networknt.schema.utils.StringUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.example.aitoolsbox.box.unity.app.UnityApp;
+import org.example.aitoolsbox.box.unity.manager.UnityApp;
 import org.example.aitoolsbox.box.unity.chat_history.service.ChatHistoryService;
 import org.example.aitoolsbox.enums.ChatHistoryMessageTypeEnum;
 import org.springframework.http.MediaType;

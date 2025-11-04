@@ -3,7 +3,7 @@ package org.example.aitoolsbox.box.unity.chat_history.service.impl;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.example.aitoolsbox.box.unity.app.UnityApp;
+import org.example.aitoolsbox.box.unity.manager.UnityApp;
 import org.example.aitoolsbox.box.unity.chat_history.entity.ChatUnity;
 import org.example.aitoolsbox.box.unity.chat_history.mapper.ChatUnityMapper;
 import org.example.aitoolsbox.box.unity.chat_history.service.ChatHistoryService;
