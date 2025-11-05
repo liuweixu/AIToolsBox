@@ -16,20 +16,16 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * 智能Prompt安全重写顾问
- * 检测到风险时自动重写Prompt，而不是直接拒绝
+ * 自定义输入拦截器。
+ * 类似LangChain4j的输入护轨
+ * 当检测到输入异常时，会修改请求让AI在对话界面直接回复相应的错误内容
  */
 public class PromptSafetyAdvisor implements CallAdvisor, StreamAdvisor {
 
-    // 敏感词映射：违规词 → 合规替换
-    private static final Map<String, String> SENSITIVE_WORD_MAPPING = Map.of(
-            "破解", "安全分析",
-            "hack", "security testing",
-            "绕过", "合规访问",
-            "bypass", "authorized access",
-            "越狱", "系统优化",
-            "jailbreak", "system customization"
-    );
+    // 敏感词列表
+    private static final List<String> SENSITIVE_WORDS = Arrays.asList(
+            "忽略之前的指令", "ignore previous instructions", "ignore above",
+            "破解", "hack", "绕过", "bypass", "越狱", "jailbreak");
 
     // 注入攻击模式
     private static final List<Pattern> INJECTION_PATTERNS = Arrays.asList(
@@ -37,196 +33,82 @@ public class PromptSafetyAdvisor implements CallAdvisor, StreamAdvisor {
             Pattern.compile("(?i)(?:forget|disregard)\\s+(?:everything|all)\\s+(?:above|before)"),
             Pattern.compile("(?i)(?:pretend|act|behave)\\s+(?:as|like)\\s+(?:if|you\\s+are)"),
             Pattern.compile("(?i)system\\s*:\\s*you\\s+are"),
-            Pattern.compile("(?i)new\\s+(?:instructions?|commands?|prompts?)\\s*:")
-    );
+            Pattern.compile("(?i)new\\s+(?:instructions?|commands?|prompts?)\\s*:"));
 
     /**
-     * 智能重写输入内容
+     * 验证输入并返回错误消息，如果没有错误则返回null
      */
-    private RewriteResult rewriteInput(String originalInput) {
-        String processedInput = originalInput;
-        boolean wasRewritten = false;
-        String rewriteReason = null;
-
-        // 1. 检查长度限制
-        if (processedInput.length() > 1000) {
-            // 智能截断，保留核心问题
-            processedInput = smartTruncate(processedInput, 800);
-            wasRewritten = true;
-            rewriteReason = "内容过长已自动优化";
+    private String validateInput(ChatClientRequest request) {
+        String input = request.prompt().getUserMessage().getText();
+        // 检查输入长度
+        if (input.length() > 1000) {
+            return "抱歉，您的输入内容过长，超过了 1000 字符的限制。请缩短内容后重试。";
         }
-
-        // 2. 移除注入攻击模式
+        // 检查是否为空
+        if (input.trim().isEmpty()) {
+            return "抱歉，输入内容不能为空，请输入有效的问题或内容。";
+        }
+        // 检查敏感词
+        String lowerInput = input.toLowerCase();
+        for (String sensitiveWord : SENSITIVE_WORDS) {
+            if (lowerInput.contains(sensitiveWord.toLowerCase())) {
+                return "抱歉，您的输入包含不当内容，为了维护良好的对话环境，请修改后重试。";
+            }
+        }
+        // 检查注入攻击模式
         for (Pattern pattern : INJECTION_PATTERNS) {
-            if (pattern.matcher(processedInput).find()) {
-                processedInput = pattern.matcher(processedInput).replaceAll("").trim();
-                wasRewritten = true;
-                rewriteReason = "检测到指令注入尝试已移除";
-                break;
+            if (pattern.matcher(input).find()) {
+                return "抱歉，检测到您的输入可能存在安全风险，请求已被拒绝。请使用正常的问题进行交流。";
             }
         }
-
-        // 3. 替换敏感词
-        for (Map.Entry<String, String> entry : SENSITIVE_WORD_MAPPING.entrySet()) {
-            if (processedInput.toLowerCase().contains(entry.getKey().toLowerCase())) {
-                processedInput = processedInput.replaceAll("(?i)" + Pattern.quote(entry.getKey()), entry.getValue());
-                wasRewritten = true;
-                rewriteReason = "敏感词已替换为合规表述";
-            }
-        }
-
-        // 4. 优化Prompt专业性
-        if (needsProfessionalOptimization(processedInput)) {
-            processedInput = optimizeProfessionalism(processedInput);
-            wasRewritten = true;
-            rewriteReason = "问题表述已优化";
-        }
-
-        return new RewriteResult(processedInput, wasRewritten, rewriteReason);
+        return null; // 没有错误
     }
 
     /**
-     * 智能截断
+     * 修改请求，将用户输入替换为错误消息，让AI自然回复错误消息
      */
-    private String smartTruncate(String input, int maxLength) {
-        if (input.length() <= maxLength) return input;
-
-        // 尝试在句子边界截断
-        int lastSentenceEnd = Math.max(
-                input.lastIndexOf('。', maxLength),
-                Math.max(
-                        input.lastIndexOf('.', maxLength),
-                        input.lastIndexOf('！', maxLength)
-                )
-        );
-
-        if (lastSentenceEnd > maxLength * 0.7) {
-            return input.substring(0, lastSentenceEnd + 1) + " [内容已截断]";
-        }
-
-        return input.substring(0, maxLength) + " [内容已截断]";
-    }
-
-    /**
-     * 检查是否需要专业性优化
-     */
-    private boolean needsProfessionalOptimization(String input) {
-        return input.length() < 50 || // 太简短
-                input.matches(".*[怎么|如何|怎么办].*") || // 开放式问题
-                !input.contains("？") && !input.contains("?"); // 缺少标点
-    }
-
-    /**
-     * 优化Prompt专业性
-     */
-    private String optimizeProfessionalism(String input) {
-        String optimized = input.trim();
-
-        // 确保以标点结尾
-        if (!optimized.matches(".*[。.！!？?]$")) {
-            optimized += "。";
-        }
-
-        // 为简短问题添加上下文
-        if (optimized.length() < 30 && optimized.matches(".*[怎么|如何].*")) {
-            optimized = "请详细说明：" + optimized;
-        }
-
-        return optimized;
-    }
-
-    /**
-     * 修改请求，使用重写后的内容
-     */
-    private ChatClientRequest replaceUserInput(ChatClientRequest request, String newInput, String originalInput) {
+    private ChatClientRequest replaceUserInputWithErrorMessage(ChatClientRequest request, String errorMessage) {
+        // 获取原始 Prompt 的所有消息
         List<Message> originalMessages = request.prompt().getInstructions();
-
-        // 过滤掉原始用户消息，保留系统消息等
+        // 过滤掉用户消息，保留系统消息等其他消息
         List<Message> filteredMessages = originalMessages.stream()
                 .filter(msg -> !(msg instanceof UserMessage))
                 .collect(Collectors.toList());
-
-        // 添加重写后的用户消息
-        filteredMessages.add(new UserMessage(newInput));
-
-        // 可选：在上下文中记录重写信息
-        Map<String, Object> newContext = new HashMap<>(request.context());
-        if (!newInput.equals(originalInput)) {
-            newContext.put("prompt_rewritten", true);
-            newContext.put("original_input", originalInput);
-        }
-
+        // 添加新的错误消息作为用户消息
+        filteredMessages.add(new UserMessage(errorMessage));
+        // 创建新的 Prompt，保留原有的 ChatOptions
         Prompt newPrompt = new Prompt(filteredMessages, request.prompt().getOptions());
-        return new ChatClientRequest(newPrompt, newContext);
+        return new ChatClientRequest(newPrompt, request.context());
     }
 
     @Override
-    public ChatClientResponse adviseCall(ChatClientRequest request, CallAdvisorChain chain) {
-        String originalInput = request.prompt().getUserMessage().getText();
-
-        // 空输入检查
-        if (originalInput.trim().isEmpty()) {
-            ChatClientRequest errorRequest = createErrorMessageRequest(request,
-                    "请输入有效的问题或内容。");
-            return chain.nextCall(errorRequest);
+    public ChatClientResponse adviseCall(ChatClientRequest chatClientRequest, CallAdvisorChain callAdvisorChain) {
+        String errorMessage = validateInput(chatClientRequest);
+        if (errorMessage != null) {
+            // 如果有错误，修改请求让AI回复错误消息
+            ChatClientRequest modifiedRequest = replaceUserInputWithErrorMessage(chatClientRequest, errorMessage);
+            return callAdvisorChain.nextCall(modifiedRequest);
         }
-
-        // 智能重写
-        RewriteResult rewriteResult = rewriteInput(originalInput);
-
-        if (rewriteResult.wasRewritten) {
-            // 使用重写后的内容继续处理
-            ChatClientRequest modifiedRequest = replaceUserInput(
-                    request, rewriteResult.processedInput, originalInput);
-            return chain.nextCall(modifiedRequest);
-        }
-
-        // 无修改，继续正常流程
-        return chain.nextCall(request);
+        // 没有错误，继续正常流程
+        return callAdvisorChain.nextCall(chatClientRequest);
     }
 
     @Override
-    public Flux<ChatClientResponse> adviseStream(ChatClientRequest request, StreamAdvisorChain chain) {
-        // 实现逻辑与adviseCall类似
-        String originalInput = request.prompt().getUserMessage().getText();
-
-        if (originalInput.trim().isEmpty()) {
-            ChatClientRequest errorRequest = createErrorMessageRequest(request,
-                    "请输入有效的问题或内容。");
-            return chain.nextStream(errorRequest);
+    public Flux<ChatClientResponse> adviseStream(ChatClientRequest chatClientRequest,
+                                                 StreamAdvisorChain streamAdvisorChain) {
+        String errorMessage = validateInput(chatClientRequest);
+        if (errorMessage != null) {
+            // 如果有错误，修改请求让AI回复错误消息
+            ChatClientRequest modifiedRequest = replaceUserInputWithErrorMessage(chatClientRequest, errorMessage);
+            return streamAdvisorChain.nextStream(modifiedRequest);
         }
-
-        RewriteResult rewriteResult = rewriteInput(originalInput);
-
-        if (rewriteResult.wasRewritten) {
-            ChatClientRequest modifiedRequest = replaceUserInput(
-                    request, rewriteResult.processedInput, originalInput);
-            return chain.nextStream(modifiedRequest);
-        }
-
-        return chain.nextStream(request);
-    }
-
-    private ChatClientRequest createErrorMessageRequest(ChatClientRequest request, String errorMessage) {
-        return replaceUserInput(request, errorMessage, "");
-    }
-
-    // 重写结果记录类
-    private static class RewriteResult {
-        final String processedInput;
-        final boolean wasRewritten;
-        final String rewriteReason;
-
-        RewriteResult(String processedInput, boolean wasRewritten, String rewriteReason) {
-            this.processedInput = processedInput;
-            this.wasRewritten = wasRewritten;
-            this.rewriteReason = rewriteReason;
-        }
+        // 没有错误，继续正常流程
+        return streamAdvisorChain.nextStream(chatClientRequest);
     }
 
     @Override
     public String getName() {
-        return "PromptSafetyAdvisor";
+        return this.getClass().getSimpleName();
     }
 
     @Override
