@@ -54,13 +54,11 @@ public class PromptSafetyAdvisor implements CallAdvisor, StreamAdvisor {
         }
 
         String rewritten = originalInput;
-        boolean wasModified = false;
 
         // 1. 移除注入攻击模式
         for (Pattern pattern : INJECTION_PATTERNS) {
             if (pattern.matcher(rewritten).find()) {
                 rewritten = pattern.matcher(rewritten).replaceAll("");
-                wasModified = true;
             }
         }
 
@@ -72,7 +70,6 @@ public class PromptSafetyAdvisor implements CallAdvisor, StreamAdvisor {
                 // 使用正则表达式进行不区分大小写的替换
                 Pattern sensitivePattern = Pattern.compile("(?i)" + Pattern.quote(sensitiveWord));
                 rewritten = sensitivePattern.matcher(rewritten).replaceAll("");
-                wasModified = true;
             }
         }
 
@@ -83,21 +80,18 @@ public class PromptSafetyAdvisor implements CallAdvisor, StreamAdvisor {
         if (rewritten.length() > MAX_INPUT_LENGTH) {
             // 优先在句号、问号、感叹号处截断
             int cutPoint = MAX_INPUT_LENGTH;
-            int lastSentenceEnd = rewritten.lastIndexOf('。', MAX_INPUT_LENGTH);
-            if (lastSentenceEnd == -1) {
-                lastSentenceEnd = rewritten.lastIndexOf('.', MAX_INPUT_LENGTH);
-            }
-            if (lastSentenceEnd == -1) {
-                lastSentenceEnd = rewritten.lastIndexOf('?', MAX_INPUT_LENGTH);
-            }
-            if (lastSentenceEnd == -1) {
-                lastSentenceEnd = rewritten.lastIndexOf('!', MAX_INPUT_LENGTH);
-            }
-            if (lastSentenceEnd > MAX_INPUT_LENGTH * 0.7) { // 至少保留70%的内容
+            int lastSentenceEnd = Math.max(
+                    rewritten.lastIndexOf('。', MAX_INPUT_LENGTH),
+                    Math.max(
+                            rewritten.lastIndexOf('.', MAX_INPUT_LENGTH),
+                            rewritten.lastIndexOf('！', MAX_INPUT_LENGTH)
+                    )
+            );
+            // 尝试在句子边界截断
+            if (lastSentenceEnd > MAX_INPUT_LENGTH * 0.7) {
                 cutPoint = lastSentenceEnd + 1;
             }
             rewritten = rewritten.substring(0, cutPoint).trim();
-            wasModified = true;
         }
 
         // 5. 优化 Prompt 专业性：移除多余的语气词和无效字符
@@ -119,7 +113,6 @@ public class PromptSafetyAdvisor implements CallAdvisor, StreamAdvisor {
         String optimized = input;
 
         // 移除过多的语气词（保留适度的语气）
-        // 这里可以根据需要添加更多优化规则
 
         // 移除连续重复的标点符号
         optimized = optimized.replaceAll("([。！？\\.!\\?])\\1+", "$1");
@@ -140,7 +133,7 @@ public class PromptSafetyAdvisor implements CallAdvisor, StreamAdvisor {
         String originalInput = request.prompt().getUserMessage().getText();
         String rewrittenInput = rewritePrompt(originalInput);
 
-        // 如果重写后无效，返回 null（调用方可以决定如何处理）
+        // 如果重写后无效，返回 null
         if (rewrittenInput == null) {
             return null;
         }
@@ -178,6 +171,7 @@ public class PromptSafetyAdvisor implements CallAdvisor, StreamAdvisor {
                 .collect(Collectors.toList());
         // 添加新的错误消息
         filteredMessages.add(new UserMessage(errorMessage));
+        // 构建错误消息回复
         Prompt newPrompt = new Prompt(filteredMessages, request.prompt().getOptions());
         return new ChatClientRequest(newPrompt, request.context());
     }
