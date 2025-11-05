@@ -1,5 +1,11 @@
-package org.example.aitoolsbox.common;
+package org.example.aitoolsbox.box.unity.advisor;
 
+import com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeConnectionProperties;
+import com.alibaba.cloud.ai.dashscope.api.DashScopeApi;
+import com.alibaba.cloud.ai.dashscope.rag.DashScopeDocumentRetriever;
+import com.alibaba.cloud.ai.dashscope.rag.DashScopeDocumentRetrieverOptions;
+import lombok.extern.slf4j.Slf4j;
+import org.example.aitoolsbox.common.RRFFusionProcessor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
@@ -7,25 +13,38 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
-import org.springframework.ai.rag.generation.augmentation.QueryAugmenter;
 import org.springframework.ai.rag.preretrieval.query.expansion.MultiQueryExpander;
 import org.springframework.ai.rag.preretrieval.query.transformation.QueryTransformer;
 import org.springframework.ai.rag.preretrieval.query.transformation.TranslationQueryTransformer;
 import org.springframework.ai.rag.retrieval.join.DocumentJoiner;
 import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
-import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
-import org.springframework.ai.vectorstore.VectorStore;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class RAGFusion {
+@Slf4j
+public class UnityRagBaiLianAdvisor {
 
-    public RetrievalAugmentationAdvisor advisor(ChatModel chatModel, VectorStore vectorStore) {
+    private static final String indexName = "Unity开发学习";
+
+    // 自定义prompt模板，允许模型在没有知识库内容时基于自身知识回答
+    PromptTemplate promptTemplate = new PromptTemplate("""
+            以下为相关背景信息（如果为空，则基于你的知识回答）：
+            ---------------------
+            {context}
+            ---------------------
+            
+            根据提供的背景信息回答问题。
+            如果背景信息为空或与问题无关，你可以基于你的知识来回答。
+            查询：{query}
+            回答：
+            """);
+
+    public RetrievalAugmentationAdvisor advisor(ChatModel chatModel, DashScopeConnectionProperties properties) {
+
         ChatClient.Builder chatClientBuilder = ChatClient.builder(chatModel);
-
         // 1. Pre-Retrieval模块
         // 1.1 QueryTransformer：将问题转换为中文
         QueryTransformer queryTransformer = TranslationQueryTransformer.builder()
@@ -38,17 +57,11 @@ public class RAGFusion {
                 .numberOfQueries(3) // 生成新的问题条数
                 .includeOriginal(true) // 是否包括原先问题，默认是true
                 .build();
+        DocumentRetriever retriever = new DashScopeDocumentRetriever(
+                DashScopeApi.builder().apiKey(properties.getApiKey()).build(),
+                DashScopeDocumentRetrieverOptions.builder().withIndexName(indexName).build());
 
-        // 2. Retrieval模块
-        // 2.1 VectorStoreDocumentRetriever：查询向量数据库，相似度大于等于0.3的前2条记录，并且来自官方网站的文档
-        DocumentRetriever documentRetriever = VectorStoreDocumentRetriever.builder()
-                .vectorStore(vectorStore)
-                .similarityThreshold(0.3)
-                .topK(2)
-                // .filterExpression(new FilterExpressionBuilder().eq("source", "官方网站").build())
-                .build();
-
-        // 2.2 自定义DocumentJoiner：将多个查询结果的文档采用RRF算法进行去重和排序，
+        // 自定义DocumentJoiner：将多个查询结果的文档采用RRF算法进行去重和排序，
         DocumentJoiner documentJoiner = new DocumentJoiner() {
             private final RRFFusionProcessor fusionProcessor = new RRFFusionProcessor(60);
 
@@ -70,29 +83,18 @@ public class RAGFusion {
             }
         };
 
-        // 4. Generation模块
-        // 4.1 QueryAugmenter：组装最后的问题
-        PromptTemplate promptTemplate = new PromptTemplate("""
-                以下为相关背景信息。
-                ---------------------
-                {context}
-                ---------------------
-
-                根据提供的背景信息且没有先入为主的观念，回答问题。
-                请遵循以下规则：
-                1. 如果答案不在所提供的信息中，那就直接说你不知道。
-                2. 避免使用诸如“根据上下文……”或“所提供的信息……”这样的表述。
-                查询：{query}
-                回答：
-                """);
-        QueryAugmenter queryAugmenter = ContextualQueryAugmenter.builder().promptTemplate(promptTemplate).build();
-
-        return RetrievalAugmentationAdvisor.builder()
+        return RetrievalAugmentationAdvisor
+                .builder()
                 .queryTransformers(queryTransformer)
                 .queryExpander(queryExpander)
-                .documentRetriever(documentRetriever)
+                .documentRetriever(retriever)
                 .documentJoiner(documentJoiner)
-                .queryAugmenter(queryAugmenter)
+                .queryAugmenter(ContextualQueryAugmenter
+                        .builder()
+                        .promptTemplate(promptTemplate)
+                        // .allowEmptyContext(true) // 这个效果不好
+                        .build())
                 .build();
     }
+
 }

@@ -1,5 +1,6 @@
 package org.example.aitoolsbox.config;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.ExtractedTextFormatter;
@@ -8,6 +9,7 @@ import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
@@ -46,7 +48,7 @@ public class PdfEmbeddingService {
             for (int i = 0; i < splitDocuments.size(); i += batchSize) {
                 int endIndex = Math.min(i + batchSize, splitDocuments.size());
                 List<Document> batch = splitDocuments.subList(i, endIndex);
-                // 3. 存储到Milvus向量数据库（分批处理）
+                // 3. 存储到Redis向量数据库（分批处理）
                 vectorStore.add(batch);
                 log.info("Processed batch {} to {}", i / batchSize + 1, (endIndex - 1) / batchSize + 1);
             }

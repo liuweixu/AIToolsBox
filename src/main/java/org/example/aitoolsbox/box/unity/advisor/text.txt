@@ -1,0 +1,236 @@
+package org.example.aitoolsbox.box.unity.advisor;
+
+import org.springframework.ai.chat.client.ChatClientRequest;
+import org.springframework.ai.chat.client.ChatClientResponse;
+import org.springframework.ai.chat.client.advisor.api.CallAdvisor;
+import org.springframework.ai.chat.client.advisor.api.CallAdvisorChain;
+import org.springframework.ai.chat.client.advisor.api.StreamAdvisor;
+import org.springframework.ai.chat.client.advisor.api.StreamAdvisorChain;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.Prompt;
+import reactor.core.publisher.Flux;
+
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+/**
+ * 智能Prompt安全重写顾问
+ * 检测到风险时自动重写Prompt，而不是直接拒绝
+ */
+public class PromptSafetyAdvisor implements CallAdvisor, StreamAdvisor {
+
+    // 敏感词映射：违规词 → 合规替换
+    private static final Map<String, String> SENSITIVE_WORD_MAPPING = Map.of(
+            "破解", "安全分析",
+            "hack", "security testing",
+            "绕过", "合规访问",
+            "bypass", "authorized access",
+            "越狱", "系统优化",
+            "jailbreak", "system customization"
+    );
+
+    // 注入攻击模式
+    private static final List<Pattern> INJECTION_PATTERNS = Arrays.asList(
+            Pattern.compile("(?i)ignore\\s+(?:previous|above|all)\\s+(?:instructions?|commands?|prompts?)"),
+            Pattern.compile("(?i)(?:forget|disregard)\\s+(?:everything|all)\\s+(?:above|before)"),
+            Pattern.compile("(?i)(?:pretend|act|behave)\\s+(?:as|like)\\s+(?:if|you\\s+are)"),
+            Pattern.compile("(?i)system\\s*:\\s*you\\s+are"),
+            Pattern.compile("(?i)new\\s+(?:instructions?|commands?|prompts?)\\s*:")
+    );
+
+    /**
+     * 智能重写输入内容
+     */
+    private RewriteResult rewriteInput(String originalInput) {
+        String processedInput = originalInput;
+        boolean wasRewritten = false;
+        String rewriteReason = null;
+
+        // 1. 检查长度限制
+        if (processedInput.length() > 1000) {
+            // 智能截断，保留核心问题
+            processedInput = smartTruncate(processedInput, 800);
+            wasRewritten = true;
+            rewriteReason = "内容过长已自动优化";
+        }
+
+        // 2. 移除注入攻击模式
+        for (Pattern pattern : INJECTION_PATTERNS) {
+            if (pattern.matcher(processedInput).find()) {
+                processedInput = pattern.matcher(processedInput).replaceAll("").trim();
+                wasRewritten = true;
+                rewriteReason = "检测到指令注入尝试已移除";
+                break;
+            }
+        }
+
+        // 3. 替换敏感词
+        for (Map.Entry<String, String> entry : SENSITIVE_WORD_MAPPING.entrySet()) {
+            if (processedInput.toLowerCase().contains(entry.getKey().toLowerCase())) {
+                processedInput = processedInput.replaceAll("(?i)" + Pattern.quote(entry.getKey()), entry.getValue());
+                wasRewritten = true;
+                rewriteReason = "敏感词已替换为合规表述";
+            }
+        }
+
+        // 4. 优化Prompt专业性
+        if (needsProfessionalOptimization(processedInput)) {
+            processedInput = optimizeProfessionalism(processedInput);
+            wasRewritten = true;
+            rewriteReason = "问题表述已优化";
+        }
+
+        return new RewriteResult(processedInput, wasRewritten, rewriteReason);
+    }
+
+    /**
+     * 智能截断
+     */
+    private String smartTruncate(String input, int maxLength) {
+        if (input.length() <= maxLength) return input;
+
+        // 尝试在句子边界截断
+        int lastSentenceEnd = Math.max(
+                input.lastIndexOf('。', maxLength),
+                Math.max(
+                        input.lastIndexOf('.', maxLength),
+                        input.lastIndexOf('！', maxLength)
+                )
+        );
+
+        if (lastSentenceEnd > maxLength * 0.7) {
+            return input.substring(0, lastSentenceEnd + 1) + " [内容已截断]";
+        }
+
+        return input.substring(0, maxLength) + " [内容已截断]";
+    }
+
+    /**
+     * 检查是否需要专业性优化
+     */
+    private boolean needsProfessionalOptimization(String input) {
+        return input.length() < 50 || // 太简短
+                input.matches(".*[怎么|如何|怎么办].*") || // 开放式问题
+                !input.contains("？") && !input.contains("?"); // 缺少标点
+    }
+
+    /**
+     * 优化Prompt专业性
+     */
+    private String optimizeProfessionalism(String input) {
+        String optimized = input.trim();
+
+        // 确保以标点结尾
+        if (!optimized.matches(".*[。.！!？?]$")) {
+            optimized += "。";
+        }
+
+        // 为简短问题添加上下文
+        if (optimized.length() < 30 && optimized.matches(".*[怎么|如何].*")) {
+            optimized = "请详细说明：" + optimized;
+        }
+
+        return optimized;
+    }
+
+    /**
+     * 修改请求，使用重写后的内容
+     */
+    private ChatClientRequest replaceUserInput(ChatClientRequest request, String newInput, String originalInput) {
+        List<Message> originalMessages = request.prompt().getInstructions();
+
+        // 过滤掉原始用户消息，保留系统消息等
+        List<Message> filteredMessages = originalMessages.stream()
+                .filter(msg -> !(msg instanceof UserMessage))
+                .collect(Collectors.toList());
+
+        // 添加重写后的用户消息
+        filteredMessages.add(new UserMessage(newInput));
+
+        // 可选：在上下文中记录重写信息
+        Map<String, Object> newContext = new HashMap<>(request.context());
+        if (!newInput.equals(originalInput)) {
+            newContext.put("prompt_rewritten", true);
+            newContext.put("original_input", originalInput);
+        }
+
+        Prompt newPrompt = new Prompt(filteredMessages, request.prompt().getOptions());
+        return new ChatClientRequest(newPrompt, newContext);
+    }
+
+    @Override
+    public ChatClientResponse adviseCall(ChatClientRequest request, CallAdvisorChain chain) {
+        String originalInput = request.prompt().getUserMessage().getText();
+
+        // 空输入检查
+        if (originalInput.trim().isEmpty()) {
+            ChatClientRequest errorRequest = createErrorMessageRequest(request,
+                    "请输入有效的问题或内容。");
+            return chain.nextCall(errorRequest);
+        }
+
+        // 智能重写
+        RewriteResult rewriteResult = rewriteInput(originalInput);
+
+        if (rewriteResult.wasRewritten) {
+            // 使用重写后的内容继续处理
+            ChatClientRequest modifiedRequest = replaceUserInput(
+                    request, rewriteResult.processedInput, originalInput);
+            return chain.nextCall(modifiedRequest);
+        }
+
+        // 无修改，继续正常流程
+        return chain.nextCall(request);
+    }
+
+    @Override
+    public Flux<ChatClientResponse> adviseStream(ChatClientRequest request, StreamAdvisorChain chain) {
+        // 实现逻辑与adviseCall类似
+        String originalInput = request.prompt().getUserMessage().getText();
+
+        if (originalInput.trim().isEmpty()) {
+            ChatClientRequest errorRequest = createErrorMessageRequest(request,
+                    "请输入有效的问题或内容。");
+            return chain.nextStream(errorRequest);
+        }
+
+        RewriteResult rewriteResult = rewriteInput(originalInput);
+
+        if (rewriteResult.wasRewritten) {
+            ChatClientRequest modifiedRequest = replaceUserInput(
+                    request, rewriteResult.processedInput, originalInput);
+            return chain.nextStream(modifiedRequest);
+        }
+
+        return chain.nextStream(request);
+    }
+
+    private ChatClientRequest createErrorMessageRequest(ChatClientRequest request, String errorMessage) {
+        return replaceUserInput(request, errorMessage, "");
+    }
+
+    // 重写结果记录类
+    private static class RewriteResult {
+        final String processedInput;
+        final boolean wasRewritten;
+        final String rewriteReason;
+
+        RewriteResult(String processedInput, boolean wasRewritten, String rewriteReason) {
+            this.processedInput = processedInput;
+            this.wasRewritten = wasRewritten;
+            this.rewriteReason = rewriteReason;
+        }
+    }
+
+    @Override
+    public String getName() {
+        return "PromptSafetyAdvisor";
+    }
+
+    @Override
+    public int getOrder() {
+        return 0;
+    }
+}

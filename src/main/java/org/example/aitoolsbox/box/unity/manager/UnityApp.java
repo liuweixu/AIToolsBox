@@ -1,27 +1,21 @@
 package org.example.aitoolsbox.box.unity.manager;
 
-
+import com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeConnectionProperties;
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.example.aitoolsbox.box.unity.advisor.MyLoggerAdvisor;
-import org.example.aitoolsbox.box.unity.advisor.PromptSafetyAdvisor;
-import org.example.aitoolsbox.box.unity.advisor.ReReadingAdvisor;
+import org.example.aitoolsbox.box.unity.advisor.*;
 import org.example.aitoolsbox.box.unity.chat_history.entity.ChatClientKey;
 import org.example.aitoolsbox.box.unity.chat_history.service.ChatHistoryService;
-import org.example.aitoolsbox.common.RAGFusion;
 import org.example.aitoolsbox.config.RedisMemoryRepository;
 import org.example.aitoolsbox.models.ChatModelFactory;
 import org.example.aitoolsbox.enums.ChatModelEnum;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.PromptTemplate;
-import org.springframework.ai.ollama.OllamaChatModel;
-import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -38,9 +32,8 @@ public class UnityApp {
 
     private final ChatModelFactory chatModelFactory;
 
-
-//    @Resource
-//    private RedissonRedisChatMemoryRepository redisChatMemoryRepository;
+    // @Resource
+    // private RedissonRedisChatMemoryRepository redisChatMemoryRepository;
 
     @Resource
     private RedisMemoryRepository redisMemoryRepository;
@@ -52,16 +45,12 @@ public class UnityApp {
     @Resource
     private ChatHistoryService chatHistoryService;
 
-    // 百炼知识库RAG
-    @Resource
-    private Advisor unityRagBaiLianAdvisor;
-
     @Resource
     private ToolCallbackProvider toolCallbackProvider;
 
     // 引入向量数据库（只适用于本地RAG时）
-    @Resource
-    private VectorStore vectorStore;
+//    @Resource
+//    private VectorStore vectorStore;
 
     /**
      * 系统提示词
@@ -87,7 +76,6 @@ public class UnityApp {
             始终以一位亲切、专业的 Unity 导师身份进行交流，帮助用户真正掌握 Unity 与 C# 游戏开发技能。
             """;
 
-
     /**
      * 根据unityId获取服务，带缓存
      */
@@ -109,7 +97,6 @@ public class UnityApp {
         this.chatModelFactory = chatModelFactory;
     }
 
-
     /**
      * 会话记忆引入Redis
      *
@@ -119,10 +106,6 @@ public class UnityApp {
     private ChatClient createChatClient(String chatModelName, String unityId) {
         ChatModel chatModel = this.chatModelFactory.getChatModel(chatModelName);
         log.info("ChatModel for AIPlatform: {}", chatModel);
-
-        // 添加RRF-Fusion算法
-        RAGFusion ragFusion = new RAGFusion();
-        RetrievalAugmentationAdvisor ragAdvisor = ragFusion.advisor(chatModel, vectorStore);
 
         // 基于Redis的对话记忆
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
@@ -139,14 +122,11 @@ public class UnityApp {
                                 .builder(chatMemory)
                                 .conversationId(unityId)
                                 .build(),
-//                        ragAdvisor,
                         // 自定义日志Advisor
                         new MyLoggerAdvisor(),
-                        new ReReadingAdvisor()
-                )
+                        new ReReadingAdvisor())
                 .build();
     }
-
 
     /**
      * 基础对话方法 可以实现多轮对话
@@ -193,7 +173,6 @@ public class UnityApp {
         return unityReport;
     }
 
-
     /**
      * RAG调用，此处使用百炼智能体
      *
@@ -208,7 +187,7 @@ public class UnityApp {
                 .prompt()
                 .user(message)
                 .advisors(new MyLoggerAdvisor())
-                .advisors(unityRagBaiLianAdvisor)
+//                .advisors(unityRagBaiLianAdvisor)
                 .call()
                 .chatResponse();
         return response.getResult().getOutput().getText();
@@ -227,8 +206,8 @@ public class UnityApp {
         ChatResponse response = chatClient
                 .prompt()
                 .user(message)
-                //TODO  开启日志，观察效果
-//                .advisors(new MyLoggerAdvisor())
+                // TODO 开启日志，观察效果
+                // .advisors(new MyLoggerAdvisor())
                 .toolCallbacks(allTools)
                 .call()
                 .chatResponse();
@@ -236,6 +215,9 @@ public class UnityApp {
         log.info("content: {}", content);
         return content;
     }
+
+    @Resource
+    private DashScopeConnectionProperties dashScopeConnectionProperties;
 
     /**
      * Flux 流式输出
@@ -247,12 +229,23 @@ public class UnityApp {
      */
     public Flux<String> doChatByStream(String message, String unityId, String modelName) {
         log.info("unityid: {}", unityId);
-//        ChatClient chatClient = createChatClient(modelName, unityId);
+        // ChatClient chatClient = createChatClient(modelName, unityId);
         ChatClient chatClient = getChatClientByCaffeine(unityId, modelName);
+        // 开启本地RAG用：添加RRF-Fusion算法
+        // RAGFusionAdvisor ragFusionAdvisor = new RAGFusionAdvisor();
+        // RetrievalAugmentationAdvisor ragAdvisor = ragFusionAdvisor
+        // .advisor(this.chatModelFactory.getChatModel(modelName), vectorStore);
+        // 开启百炼知识库用：
+        UnityRagBaiLianAdvisor unityRagBaiLianAdvisor = new UnityRagBaiLianAdvisor();
+
         return chatClient
                 .prompt()
                 .user(message)
-                .advisors(unityRagBaiLianAdvisor) // 引入百炼知识库rag
+                .advisors(unityRagBaiLianAdvisor.advisor(
+                        this.chatModelFactory.getChatModel(modelName),
+                        dashScopeConnectionProperties
+                )) // 引入百炼知识库rag
+                // .advisors(ragAdvisor) // 引入本地知识库
                 .advisors(new PromptSafetyAdvisor()) // 引入输入安全机制
                 .toolCallbacks(allTools)
                 .toolCallbacks(toolCallbackProvider)
@@ -266,7 +259,6 @@ public class UnityApp {
      * @param message 用户输入内容
      * @return
      */
-
 
     public String summaryResponse(String message) {
 
@@ -288,4 +280,3 @@ public class UnityApp {
         }
     }
 }
-
