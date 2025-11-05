@@ -24,6 +24,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 基于RAG-Fusion算法
+ */
 @Slf4j
 public class UnityRagBaiLianAdvisor {
 
