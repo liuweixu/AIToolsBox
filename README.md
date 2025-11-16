@@ -5,7 +5,9 @@
 基于Spring Boot3 + Spring AI/Spring AI Alibaba + RAG + 工具调用 + MCP的**多功能**
 AI创智工坊，提供Unity助手、拥有自主规划能力的智能体、图片生成与视频生成四个模块。支持多轮对话、对话历史存储与查询、RAG知识库检索、工具调用等功能，智能体能够基于RaAct模式自主思考，并调用网页搜索与处理、PDF生成等工具完成复杂任务。
 
-## 项目架构图（待定）
+## 项目架构图
+
+![项目架构图](githubImage/项目架构图.png)
 
 ## 技术选型
 
@@ -31,6 +33,12 @@ AI创智工坊，提供Unity助手、拥有自主规划能力的智能体、图�
 - EventSource：用于对Flux流式输出内容处理。
 - Cursor：用于Vibe Coding，生成一些比较难以处理的界面。
 - Axios：请求库
+
+## 项目总结
+
+此处内容较多，故而用飞书链接形式展示：
+
+[项目总结](https://rslvikpbsl.feishu.cn/docx/QYw4d2o2VoimIwx8LIMc8Mvjn0d)
 
 ## 项目功能介绍
 
