@@ -99,8 +99,7 @@ public class ImageSaveServiceImpl extends ServiceImpl<ImageSaveMapper, ImageSave
 
             // 2. 生成COS对象键（可以根据需要自定义路径格式）
             String cosKey = "/images/" + uuid + ".png";
-            String cosUrl = cosManager.uploadFile(cosKey, tempFile);
-            return cosUrl;
+            return cosManager.uploadFile(cosKey, tempFile);
         } finally {
             // 4. 清理临时文件
             if (tempFile != null && tempFile.exists()) {

@@ -1,5 +1,6 @@
 package org.example.aitoolsbox.box.unity.advisor;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.ai.chat.client.ChatClientRequest;
 import org.springframework.ai.chat.client.ChatClientResponse;
 import org.springframework.ai.chat.client.advisor.api.CallAdvisor;
@@ -35,12 +36,12 @@ public class ReReadingAdvisor implements CallAdvisor, StreamAdvisor {
     }
 
     @Override
-    public ChatClientResponse adviseCall(ChatClientRequest chatClientRequest, CallAdvisorChain chain) {
+    public @NonNull ChatClientResponse adviseCall(@NonNull ChatClientRequest chatClientRequest, CallAdvisorChain chain) {
         return chain.nextCall(this.before(chatClientRequest));
     }
 
     @Override
-    public Flux<ChatClientResponse> adviseStream(ChatClientRequest chatClientRequest, StreamAdvisorChain chain) {
+    public @NonNull Flux<ChatClientResponse> adviseStream(@NonNull ChatClientRequest chatClientRequest, StreamAdvisorChain chain) {
         return chain.nextStream(this.before(chatClientRequest));
     }
 
@@ -50,7 +51,7 @@ public class ReReadingAdvisor implements CallAdvisor, StreamAdvisor {
     }
 
     @Override
-    public String getName() {
+    public @NonNull String getName() {
         return this.getClass().getSimpleName();
     }
 }

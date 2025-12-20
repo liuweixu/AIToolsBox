@@ -16,6 +16,7 @@ public class CaffeineCache {
 
     @Bean
     public Cache<ChatClientKey, ChatClient> serviceCache() {
+        // 建造者模式
         return Caffeine
                 .newBuilder()
                 .maximumSize(1000)

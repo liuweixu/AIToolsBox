@@ -1,6 +1,7 @@
 package org.example.aitoolsbox.box.unity.advisor;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.ai.chat.client.ChatClientMessageAggregator;
 import org.springframework.ai.chat.client.ChatClientRequest;
 import org.springframework.ai.chat.client.ChatClientResponse;
@@ -14,7 +15,7 @@ import reactor.core.publisher.Flux;
 public class MyLoggerAdvisor implements CallAdvisor, StreamAdvisor {
 
     @Override
-    public String getName() {
+    public @NonNull String getName() {
         return this.getClass().getSimpleName();
     }
 
@@ -29,11 +30,13 @@ public class MyLoggerAdvisor implements CallAdvisor, StreamAdvisor {
     }
 
     private void observeAfter(ChatClientResponse chatClientResponse) {
-        log.info("AI Response: {}", chatClientResponse.chatResponse().getResult().getOutput().getText());
+        if (chatClientResponse.chatResponse() != null) {
+            log.info("AI Response: {}", chatClientResponse.chatResponse().getResult().getOutput().getText());
+        }
     }
 
     @Override
-    public ChatClientResponse adviseCall(ChatClientRequest chatClientRequest, CallAdvisorChain chain) {
+    public @NonNull ChatClientResponse adviseCall(@NonNull ChatClientRequest chatClientRequest, CallAdvisorChain chain) {
         chatClientRequest = before(chatClientRequest);
         ChatClientResponse chatClientResponse = chain.nextCall(chatClientRequest);
         observeAfter(chatClientResponse);
@@ -41,7 +44,7 @@ public class MyLoggerAdvisor implements CallAdvisor, StreamAdvisor {
     }
 
     @Override
-    public Flux<ChatClientResponse> adviseStream(ChatClientRequest chatClientRequest, StreamAdvisorChain chain) {
+    public @NonNull Flux<ChatClientResponse> adviseStream(@NonNull ChatClientRequest chatClientRequest, StreamAdvisorChain chain) {
         chatClientRequest = before(chatClientRequest);
         Flux<ChatClientResponse> chatClientResponseFlux = chain.nextStream(chatClientRequest);
         return (new ChatClientMessageAggregator()).aggregateChatClientResponse(chatClientResponseFlux, this::observeAfter);

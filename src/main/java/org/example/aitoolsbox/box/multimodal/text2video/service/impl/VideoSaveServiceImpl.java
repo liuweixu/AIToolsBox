@@ -42,12 +42,10 @@ public class VideoSaveServiceImpl extends ServiceImpl<VideoSaveMapper, VideoSave
         try {
             String generatedUrl = videoSynthesisResult.getOutput().getVideoUrl();
             String videoUrl = uploadGeneratedVideoToCOS(generatedUrl);
-            String originPrompt = prompt;
-            String augmentPrompt = prompt;
             VideoSave videoSave = new VideoSave();
             videoSave.setVideoUrl(videoUrl);
-            videoSave.setMessage(originPrompt);
-            videoSave.setMessageAugment(augmentPrompt);
+            videoSave.setMessage(prompt);
+            videoSave.setMessageAugment(prompt);
             log.info("generatedUrl: {}", generatedUrl);
             log.info("videoUrl: {}", videoUrl);
             this.save(videoSave);
@@ -103,8 +101,7 @@ public class VideoSaveServiceImpl extends ServiceImpl<VideoSaveMapper, VideoSave
 
             // 2. 生成COS对象键（可以根据需要自定义路径格式）
             String cosKey = "/videos/" + uuid + ".mp4";
-            String cosUrl = cosManager.uploadFile(cosKey, tempFile);
-            return cosUrl;
+            return cosManager.uploadFile(cosKey, tempFile);
         } finally {
             // 4. 清理临时文件
             if (tempFile != null && tempFile.exists()) {

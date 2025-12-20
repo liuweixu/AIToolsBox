@@ -60,6 +60,7 @@ public class UnityRagBaiLianAdvisor {
                 .numberOfQueries(3) // 生成新的问题条数
                 .includeOriginal(true) // 是否包括原先问题，默认是true
                 .build();
+        // 引入百炼知识库
         DocumentRetriever retriever = new DashScopeDocumentRetriever(
                 DashScopeApi.builder().apiKey(properties.getApiKey()).build(),
                 DashScopeDocumentRetrieverOptions.builder().withIndexName(indexName).build());

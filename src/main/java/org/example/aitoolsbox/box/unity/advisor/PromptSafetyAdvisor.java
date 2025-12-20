@@ -1,5 +1,6 @@
 package org.example.aitoolsbox.box.unity.advisor;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.ai.chat.client.ChatClientRequest;
 import org.springframework.ai.chat.client.ChatClientResponse;
 import org.springframework.ai.chat.client.advisor.api.CallAdvisor;
@@ -210,7 +211,7 @@ public class PromptSafetyAdvisor implements CallAdvisor, StreamAdvisor {
     }
 
     @Override
-    public String getName() {
+    public @NonNull String getName() {
         return this.getClass().getSimpleName();
     }
 

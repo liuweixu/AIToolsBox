@@ -18,13 +18,12 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @Slf4j
@@ -272,7 +271,7 @@ public class UnityApp {
                     需要有一定特性介绍，比如XX介绍、讲解XX、XX的总结、实现XX的方案等，控制10字以内。
                     如果{message}长度低于10个字，无需总结，直接返回{message}即可
                     """;
-            Map<String, Object> map = new HashMap<>();
+            Map<String, Object> map = new ConcurrentHashMap<>();
             map.put("message", message);
             PromptTemplate promptTemplate = new PromptTemplate(summaryPrompt);
             String prompt = promptTemplate.render(map);
