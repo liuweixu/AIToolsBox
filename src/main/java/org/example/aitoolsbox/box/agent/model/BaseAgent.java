@@ -230,7 +230,7 @@ public abstract class BaseAgent {
             return false;
         }
 
-        Message lastMessage = messages.get(messages.size() - 1);
+        Message lastMessage = messages.getLast();
         if (lastMessage.getText() == null || lastMessage.getText().isEmpty()) {
             return false;
         }
